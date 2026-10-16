@@ -1,0 +1,40 @@
+// Feed posts. Media is rendered as gradient tiles until real images exist.
+export const posts = [
+  {
+    id: 'p1',
+    userId: 'priya',
+    time: '2h',
+    text: 'Asked my travel agent to plan a hidden gems itinerary for Japan. The results are insane! 🇯🇵✨',
+    media: { type: 'grid', tones: ['amber', 'pink', 'purple', 'blue'] },
+    likes: 342,
+    comments: 28,
+  },
+  {
+    id: 'p2',
+    userId: 'arjun',
+    time: '5h',
+    text: 'This AI agent helped me build a full landing page in 10 minutes 😍',
+    media: { type: 'banner', tone: 'purple' },
+    likes: 421,
+    comments: 56,
+    liked: true,
+  },
+  {
+    id: 'p3',
+    userId: 'meera',
+    time: '8h',
+    text: "My fitness agent just created a 30 day plan and I'm already seeing results!",
+    media: { type: 'progress', label: 'Day 12/30', value: 72 },
+    likes: 287,
+    comments: 34,
+  },
+  {
+    id: 'p4',
+    userId: 'karan',
+    time: '12h',
+    text: 'Research agent summarized 50 papers in minutes. This is a game changer.',
+    media: { type: 'docs' },
+    likes: 199,
+    comments: 17,
+  },
+]

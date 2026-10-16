@@ -1,5 +1,5 @@
-import DesignSystem from './pages/DesignSystem'
+import AppShell from './components/layout/AppShell'
 
 export default function App() {
-  return <DesignSystem />
+  return <AppShell />
 }
