@@ -1,0 +1,142 @@
+/*
+ * Themes. Each one re-points the design tokens under `html[data-theme="…"]`,
+ * so every component picks it up without changes. The base token set in
+ * colors.css / effects.css / typography.css is the "classic" theme.
+ *
+ * Paper (the default) and Dark share the innernet.company type and shape:
+ * Georgia headlines over Arial body copy, small radii, hairline structure.
+ */
+
+:root[data-theme="paper"],
+:root[data-theme="dark"] {
+  --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  --font-display: Georgia, Times, "Times New Roman", serif;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --shadow-glow: none;
+
+  .react-flow {
+    --xy-edge-stroke-default: var(--canvas-edge);
+  }
+
+  /* Georgia headlines with the site's tight tracking */
+  :is(h1, h2, h3, .text-display-xl, .text-display-l, .text-heading-1, .text-heading-2, .text-heading-3) {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  :is(.text-display-xl, .text-display-l, .text-heading-1) {
+    letter-spacing: -0.03em;
+  }
+}
+
+/* Paper: warm paper, olive-charcoal ink, solid black logo. */
+:root[data-theme="paper"] {
+  color-scheme: light;
+
+  --color-indigo: #30352e;
+  --color-indigo-hover: #484e40;
+  --color-indigo-soft: #eeeee7;
+  --color-indigo-border: #d3d5cc;
+  --color-purple: #6c7167;
+  --color-pink: #6a342d;
+  --color-blue: #5d6c7b;
+
+  --color-gray-900: #30352e;
+  --color-gray-700: #484e40;
+  --color-gray-500: #69705e;
+  --color-gray-400: #92968b;
+  --color-gray-300: #c4c6bc;
+  --color-gray-200: #d3d5cc;
+  --color-gray-100: #eeeee7;
+  --color-white: #fdfcf9;
+
+  --color-success: #4f6b3a;
+  --color-warning: #b7862c;
+  --color-error: #9b3d32;
+  --color-info: #5d6c7b;
+
+  --gradient-primary: linear-gradient(135deg, #30352e 0%, #484e40 100%);
+  --gradient-soft: linear-gradient(#eeeee7, #eeeee7);
+  --gradient-accent: linear-gradient(#f4f2ea, #f4f2ea);
+  --gradient-canvas: linear-gradient(#faf9f5, #faf9f5);
+
+  --shadow-subtle: 0 1px 1px rgba(48, 53, 46, 0.04);
+  --shadow-medium: 0 2px 6px rgba(48, 53, 46, 0.07);
+  --shadow-large: 0 10px 24px rgba(48, 53, 46, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(48, 53, 46, 0.18);
+
+  --canvas-dot: #d3d5cc;
+  --canvas-minimap-mask: rgba(238, 238, 231, 0.6);
+  --canvas-edge: #92968b;
+
+  --selection: #f2d49b;
+
+  .logo-art {
+    filter: brightness(0);
+  }
+}
+
+/* Dark: the paper palette inverted. Charcoal surfaces, paper-colored ink. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-indigo: #ece9df;
+  --color-indigo-hover: #ffffff;
+  --color-indigo-soft: #2f332b;
+  --color-indigo-border: #3d4237;
+  --color-purple: #b5ad9a;
+  --color-pink: #d08a7a;
+  --color-blue: #8fa3b6;
+
+  --color-gray-900: #f1efe7;
+  --color-gray-700: #cfd0c6;
+  --color-gray-500: #a3a698;
+  --color-gray-400: #7d8175;
+  --color-gray-300: #4a4e45;
+  --color-gray-200: #363a32;
+  --color-gray-100: #2a2d27;
+  --color-white: #20231e;
+
+  --color-success: #8fb069;
+  --color-warning: #d9a94a;
+  --color-error: #e07a6a;
+  --color-info: #8fa3b6;
+
+  --gradient-primary: linear-gradient(135deg, #ece9df 0%, #cfd0c6 100%);
+  --gradient-soft: linear-gradient(#2a2d27, #2a2d27);
+  --gradient-accent: linear-gradient(#262a23, #262a23);
+  --gradient-canvas: linear-gradient(#171915, #171915);
+
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-large: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-focus: 0 0 0 3px rgba(236, 233, 223, 0.25);
+
+  /* Tinted surfaces: a little of each accent mixed into the card color */
+  --tone-purple-soft: color-mix(in oklab, #a855f7 14%, #20231e);
+  --tone-purple-border: color-mix(in oklab, #a855f7 28%, #20231e);
+  --tone-blue-soft: color-mix(in oklab, #3b82f6 14%, #20231e);
+  --tone-blue-border: color-mix(in oklab, #3b82f6 28%, #20231e);
+  --tone-amber-soft: color-mix(in oklab, #f59e0b 14%, #20231e);
+  --tone-amber-border: color-mix(in oklab, #f59e0b 28%, #20231e);
+  --tone-green-soft: color-mix(in oklab, #22c55e 14%, #20231e);
+  --tone-green-border: color-mix(in oklab, #22c55e 28%, #20231e);
+  --tone-pink-soft: color-mix(in oklab, #ec4899 14%, #20231e);
+  --tone-pink-border: color-mix(in oklab, #ec4899 28%, #20231e);
+  --chip-online-fg: #8fb069;
+
+  --canvas-dot: #33372f;
+  --canvas-minimap-mask: rgba(23, 25, 21, 0.6);
+  --canvas-edge: #6b6f63;
+
+  --selection: rgba(242, 212, 155, 0.35);
+
+  .logo-art {
+    filter: brightness(0) invert(1);
+  }
+}

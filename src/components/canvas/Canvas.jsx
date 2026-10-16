@@ -126,15 +126,15 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
         deleteKeyCode={['Backspace', 'Delete']}
         aria-label="Infinite canvas. Click anywhere to start a new chat."
       >
-        <Background variant={BackgroundVariant.Dots} gap={28} size={1.2} color="#dfe3ec" />
+        <Background variant={BackgroundVariant.Dots} gap={28} size={1.2} color="var(--canvas-dot)" />
         {showMinimap && (
           <MiniMap
             pannable
             zoomable
             position="bottom-right"
-            nodeColor={(node) => (node.type === 'chat' ? getTone(chats.find((c) => c.id === node.id)?.tone).accent : '#cbd5e1')}
+            nodeColor={(node) => (node.type === 'chat' ? getTone(chats.find((c) => c.id === node.id)?.tone).accent : 'var(--color-gray-300)')}
             nodeBorderRadius={12}
-            maskColor="rgba(241, 245, 249, 0.6)"
+            maskColor="var(--canvas-minimap-mask)"
             className="mb-24! overflow-hidden rounded-lg border border-gray-200 shadow-medium"
           />
         )}

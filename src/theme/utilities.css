@@ -115,8 +115,8 @@
   line-height: var(--text-body-s--line-height);
   font-weight: 500;
 }
-@utility chip-online { background: #e8f9ee; color: #15803d; }
-@utility chip-thinking { background: #f1e9ff; color: #7e22ce; }
+@utility chip-online { background: var(--tone-green-soft); color: var(--chip-online-fg); }
+@utility chip-thinking { background: var(--tone-purple-soft); color: var(--color-purple); }
 @utility chip-offline { background: var(--color-gray-100); color: var(--color-gray-500); }
 
 /* Tabs */

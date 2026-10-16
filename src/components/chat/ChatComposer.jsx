@@ -5,7 +5,7 @@ import ChatInput from './ChatInput'
 // Appears where the user clicked on the canvas; sending turns it into a chat card.
 export default function ChatComposer({ initialPrompt, onSubmit, onCancel }) {
   return (
-    <div className="w-80 rounded-xl border border-[#d7d9fc] bg-white p-3 shadow-large ring-4 ring-indigo/8 animate-pop-in">
+    <div className="w-80 rounded-xl border border-indigo-border bg-white p-3 shadow-large ring-4 ring-indigo/8 animate-pop-in">
       <div className="mb-2.5 flex items-center gap-2.5 px-1">
         <span className="inline-flex size-8 items-center justify-center rounded-full bg-indigo-soft">
           <AgentMascot className="size-6" />

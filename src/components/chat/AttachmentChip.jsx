@@ -2,8 +2,8 @@ import { File, FileSpreadsheet, FileText, X } from 'lucide-react'
 import { formatBytes, openAttachment } from '../../lib/attachments'
 
 const icons = {
-  pdf: { icon: FileText, tint: 'bg-[#fdecef] text-error' },
-  sheet: { icon: FileSpreadsheet, tint: 'bg-[#e9f8ef] text-success' },
+  pdf: { icon: FileText, tint: 'bg-(--tone-pink-soft) text-error' },
+  sheet: { icon: FileSpreadsheet, tint: 'bg-(--tone-green-soft) text-success' },
   file: { icon: File, tint: 'bg-indigo-soft text-indigo' },
 }
 

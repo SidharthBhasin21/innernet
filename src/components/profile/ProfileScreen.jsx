@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { Palette, ShieldCheck } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import AgentMascot from '../agent/AgentMascot'
+import ThemePicker from '../ui/ThemePicker'
 import { useCanvas } from '../../store/canvasStore'
 import { currentUser } from '../../data/mockUsers'
 import { connections } from '../../data/mockConnections'
@@ -46,7 +47,7 @@ export default function ProfileScreen() {
         </dl>
       </section>
 
-      <section aria-labelledby="agent-heading" className="mt-6 rounded-xl border border-[#d7d9fc] bg-gradient-accent p-4">
+      <section aria-labelledby="agent-heading" className="mt-6 rounded-xl border border-indigo-border bg-gradient-accent p-4">
         <div className="flex items-center gap-3">
           <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white shadow-subtle">
             <AgentMascot className="size-7" />
@@ -82,6 +83,18 @@ export default function ProfileScreen() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="theme-heading" className="mt-6">
+        <div className="flex items-center gap-2 px-1">
+          <Palette className="size-5 text-indigo" aria-hidden="true" />
+          <h3 id="theme-heading" className="text-body-l font-semibold text-gray-900">
+            Theme
+          </h3>
+        </div>
+        <div className="mt-3 rounded-lg border border-gray-200 bg-white p-1">
+          <ThemePicker />
+        </div>
       </section>
     </div>
   )

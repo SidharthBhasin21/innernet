@@ -2,10 +2,10 @@ import { MousePointer2, Plus } from 'lucide-react'
 import { chatSuggestions } from '../../data/mockChats'
 
 const noteTones = {
-  pink: { bg: 'bg-[#fdecef]', dot: 'bg-error' },
-  blue: { bg: 'bg-[#eaf1fd]', dot: 'bg-blue' },
+  pink: { bg: 'bg-(--tone-pink-soft)', dot: 'bg-error' },
+  blue: { bg: 'bg-(--tone-blue-soft)', dot: 'bg-blue' },
   gray: { bg: 'bg-gray-100', dot: 'bg-gray-500' },
-  green: { bg: 'bg-[#e9f8ef]', dot: 'bg-success' },
+  green: { bg: 'bg-(--tone-green-soft)', dot: 'bg-success' },
 }
 
 // Short rays around the illustration, as [rotation, distance] pairs.

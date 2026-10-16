@@ -1,3 +1,19 @@
+/* Pastel tints for chat tones, notes and status chips. Plain variables
+   (not @theme) so themes can swap them without generating utilities. */
+:root {
+  --tone-purple-soft: #f1e9ff;
+  --tone-purple-border: #e6d5fd;
+  --tone-blue-soft: #e8f1ff;
+  --tone-blue-border: #cfe0fd;
+  --tone-amber-soft: #fff4e0;
+  --tone-amber-border: #fbe2b4;
+  --tone-green-soft: #e8f9ee;
+  --tone-green-border: #c4ecd3;
+  --tone-pink-soft: #fdebf4;
+  --tone-pink-border: #f9cfe3;
+  --chip-online-fg: #15803d;
+}
+
 @theme {
   /* Primary */
   --color-indigo: #6366f1;
@@ -8,6 +24,7 @@
   /* Interaction shades of the primary indigo */
   --color-indigo-hover: #4f46e5;
   --color-indigo-soft: #eef0ff;
+  --color-indigo-border: #d7d9fc;
 
   /* Neutrals */
   --color-gray-900: #0f172a;

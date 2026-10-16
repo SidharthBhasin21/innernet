@@ -1,7 +1,15 @@
 /* React Flow overrides so the canvas matches the Innernet design language. */
 
+:root {
+  --canvas-dot: #dfe3ec;
+  --canvas-minimap-mask: rgba(241, 245, 249, 0.6);
+  --canvas-edge: #a5a8f6;
+}
+
 .react-flow {
-  --xy-edge-stroke-default: #a5a8f6;
+  --xy-edge-stroke-default: var(--canvas-edge);
+  --xy-minimap-background-color-default: var(--color-white);
+  --xy-attribution-background-color-default: transparent;
   --xy-edge-stroke-selected-default: var(--color-indigo);
   --xy-edge-stroke-width-default: 2;
   --xy-connectionline-stroke-default: var(--color-indigo);

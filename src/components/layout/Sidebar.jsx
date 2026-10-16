@@ -1,8 +1,9 @@
-import { LayoutGrid, PanelLeftClose, PanelLeftOpen, Settings, SquarePen } from 'lucide-react'
+import { LayoutGrid, PanelLeftClose, PanelLeftOpen, SquarePen } from 'lucide-react'
 import Logo from '../ui/Logo'
 import Avatar from '../ui/Avatar'
 import ConnectionList from '../connections/ConnectionList'
 import AgentChatList from '../chat/AgentChatList'
+import SettingsMenu from './SettingsMenu'
 import { currentUser } from '../../data/mockUsers'
 
 const nav = [
@@ -55,7 +56,7 @@ export default function Sidebar({ view, onNavigate, collapsed, onToggleCollapsed
         <AgentChatList collapsed={collapsed} />
       </div>
 
-      <div className={`flex items-center gap-3 border-t border-gray-200 py-4 ${collapsed ? 'justify-center px-0' : 'px-5'}`}>
+      <div className={`relative flex items-center gap-3 border-t border-gray-200 py-4 ${collapsed ? 'justify-center px-0' : 'px-5'}`}>
         <span title={collapsed ? `${currentUser.name} (@${currentUser.username})` : undefined}>
           <Avatar user={currentUser} size="lg" />
         </span>
@@ -65,9 +66,7 @@ export default function Sidebar({ view, onNavigate, collapsed, onToggleCollapsed
               <p className="truncate text-body-m font-semibold text-gray-900">{currentUser.name}</p>
               <p className="truncate text-body-s text-gray-500">@{currentUser.username}</p>
             </div>
-            <button type="button" aria-label="Settings" className="rounded-full p-2 text-gray-500 hover:bg-gray-100 focus-ring">
-              <Settings className="size-5" />
-            </button>
+            <SettingsMenu />
           </>
         )}
       </div>

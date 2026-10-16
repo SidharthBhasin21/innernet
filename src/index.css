@@ -29,7 +29,7 @@
     outline-offset: 2px;
   }
   button { -webkit-tap-highlight-color: transparent; }
-  ::selection { background: rgba(99, 102, 241, 0.2); }
+  ::selection { background: var(--selection, rgba(99, 102, 241, 0.2)); }
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
       animation-duration: 0.01ms !important;
