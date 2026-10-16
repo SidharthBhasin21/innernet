@@ -15,6 +15,7 @@ import ChatNode from '../chat/ChatNode'
 import ComposerNode, { COMPOSER_ID } from './ComposerNode'
 import CanvasTopBar from './CanvasTopBar'
 import CanvasToolbar from './CanvasToolbar'
+import MobileCanvasToolbar from './MobileCanvasToolbar'
 import EmptyCanvas from './EmptyCanvas'
 import { useCanvas } from '../../store/canvasStore'
 import { getTone } from '../../lib/chatTones'
@@ -178,7 +179,11 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
       {chats.length === 0 && !composer && <EmptyCanvas onSuggestion={startFromSuggestion} />}
 
       {!compact && <CanvasTopBar showMinimap={showMinimap} onToggleMinimap={onToggleMinimap} onOpenFeed={onOpenFeed} />}
-      <CanvasToolbar tool={tool} onToolChange={setTool} />
+      {compact ? (
+        <MobileCanvasToolbar tool={tool} onToolChange={setTool} />
+      ) : (
+        <CanvasToolbar tool={tool} onToolChange={setTool} />
+      )}
     </div>
   )
 }
