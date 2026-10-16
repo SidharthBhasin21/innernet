@@ -23,7 +23,7 @@ export default function ChatComposer({ initialPrompt, onSubmit, onCancel }) {
         onSubmit={onSubmit}
         onCancel={onCancel}
       />
-      <p className="mt-2 px-1 text-caption text-gray-400">Enter to send · Shift+Enter for a new line · Esc to cancel</p>
+      <p className="mt-2 px-1 text-caption text-gray-400 max-md:hidden">Enter to send · Shift+Enter for a new line · Esc to cancel</p>
     </div>
   )
 }

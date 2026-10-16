@@ -20,7 +20,7 @@ const rays = [
 
 function Illustration() {
   return (
-    <div aria-hidden="true" className="relative mx-auto size-56">
+    <div aria-hidden="true" className="relative mx-auto size-56 max-md:-my-8 max-md:scale-[0.7]">
       {rays.map(([deg, dist]) => (
         <span
           key={deg}
@@ -52,19 +52,22 @@ export default function EmptyCanvas({ onSuggestion }) {
             const rect = event.currentTarget.getBoundingClientRect()
             onSuggestion(prompt, { x: rect.left, y: rect.top })
           }}
-          className={`pointer-events-auto absolute w-52 rounded-lg p-5 text-left shadow-medium transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-1 hover:shadow-large focus-ring animate-pop-in ${noteTones[tone].bg} ${placement}`}
+          className={`pointer-events-auto absolute w-52 rounded-lg p-5 text-left shadow-medium transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-1 hover:shadow-large focus-ring animate-pop-in max-md:w-38 max-md:p-3.5 ${noteTones[tone].bg} ${placement}`}
         >
           <span aria-hidden="true" className={`mb-2 block size-2.5 rounded-full ${noteTones[tone].dot}`} />
-          <span className="text-body-l text-gray-900">
+          <span className="text-body-l text-gray-900 max-md:text-body-m">
             {prompt} <span aria-hidden="true">{emoji}</span>
           </span>
         </button>
       ))}
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-16 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-16 text-center max-md:pb-4">
         <Illustration />
-        <h2 className="mt-2 text-heading-3 text-gray-900">Click anywhere to start a new chat</h2>
-        <p className="mt-2 max-w-sm text-body-l text-gray-500">
+        <h2 className="mt-2 text-heading-3 text-gray-900">
+          <span className="max-md:hidden">Click</span>
+          <span className="md:hidden">Tap</span> anywhere to start a new chat
+        </h2>
+        <p className="mt-2 max-w-sm text-body-l text-gray-500 max-md:max-w-64 max-md:text-body-m">
           Ask anything, brainstorm ideas, plan, research — and place it anywhere on your canvas.
         </p>
       </div>

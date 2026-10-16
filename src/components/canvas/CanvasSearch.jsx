@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { useReactFlow } from '@xyflow/react'
 import { Search } from 'lucide-react'
 import AgentMascot from '../agent/AgentMascot'
 import { useCanvas } from '../../store/canvasStore'
+import useCanvasNavigation from '../../hooks/useCanvasNavigation'
 import { getTone } from '../../lib/chatTones'
 
 // Finds chats on the canvas and flies the viewport to the chosen one.
-export default function CanvasSearch() {
+export default function CanvasSearch({ autoFocus = false, onSelect, placeholder = 'Search across your canvas, chats, people…' }) {
   const { chats } = useCanvas()
-  const { fitView } = useReactFlow()
+  const { focusChat: flyToChat } = useCanvasNavigation()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
 
@@ -18,7 +18,8 @@ export default function CanvasSearch() {
     : []
 
   const focusChat = (id) => {
-    fitView({ nodes: [{ id }], duration: 500, maxZoom: 1, padding: 0.6 })
+    onSelect?.()
+    flyToChat(id)
     setQuery('')
     setOpen(false)
   }
@@ -39,9 +40,10 @@ export default function CanvasSearch() {
             if (event.key === 'Escape') setOpen(false)
           }}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
-          placeholder="Search across your canvas, chats, people…"
+          autoFocus={autoFocus}
+          placeholder={placeholder}
           aria-label="Search canvas"
-          className="min-w-0 flex-1 bg-transparent text-body-m placeholder:text-gray-400 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-body-m placeholder:text-gray-400 focus:outline-none max-md:text-body-l"
         />
       </label>
       {open && q && (

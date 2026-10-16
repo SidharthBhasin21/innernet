@@ -48,6 +48,18 @@
   box-shadow: var(--shadow-subtle);
 }
 
+/* Touch screens: bigger targets for connecting and resizing. */
+@media (pointer: coarse) {
+  .react-flow .chat-handle.react-flow__handle {
+    width: 20px;
+    height: 20px;
+  }
+  .react-flow .react-flow__resize-control.chat-resize-handle {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .react-flow__attribution {
   background: transparent;
   color: var(--color-gray-400);

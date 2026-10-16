@@ -4,7 +4,8 @@ import Avatar from '../ui/Avatar'
 import PostMedia from './PostMedia'
 import { getUser } from '../../data/mockUsers'
 
-export default function FeedPost({ post }) {
+// `compact` (the narrow desktop panel) shortens the author to a first name.
+export default function FeedPost({ post, compact = false }) {
   const user = getUser(post.userId)
   const [liked, setLiked] = useState(Boolean(post.liked))
   const [saved, setSaved] = useState(false)
@@ -15,7 +16,7 @@ export default function FeedPost({ post }) {
       <Avatar user={user} size="lg" />
       <div className="min-w-0 flex-1">
         <header className="flex items-center gap-1.5">
-          <span className="truncate text-body-m font-semibold text-gray-900">{user.name.split(' ')[0]}</span>
+          <span className="truncate text-body-m font-semibold text-gray-900">{compact ? user.name.split(' ')[0] : user.name}</span>
           <span className="truncate text-body-s text-gray-500">@{user.username} · {post.time}</span>
           <button type="button" aria-label="More options" className="ml-auto rounded-full p-1 text-gray-400 hover:bg-gray-100 focus-ring">
             <MoreHorizontal className="size-4" />

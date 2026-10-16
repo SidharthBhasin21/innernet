@@ -122,7 +122,8 @@ export default function ChatInput({ onSubmit, onCancel, disabled, autoFocus, ini
           rows={1}
           aria-label={label}
           placeholder={dragging ? 'Drop files to attach' : placeholder}
-          className="max-h-32 min-h-7 flex-1 resize-none bg-transparent px-1 py-1 text-body-m text-gray-900 field-sizing-content placeholder:text-gray-400 focus:outline-none"
+          // 16px on phones stops iOS Safari from zooming the page on focus.
+          className="max-h-32 min-h-7 flex-1 resize-none bg-transparent px-1 py-1 text-body-m text-gray-900 field-sizing-content placeholder:text-gray-400 focus:outline-none max-md:text-body-l"
         />
         <button
           type="submit"

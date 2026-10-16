@@ -9,7 +9,13 @@ const hues = {
   amber: 'from-warning to-pink',
 }
 
-const sizes = { sm: 'size-8 text-caption', md: 'size-10 text-body-m', lg: 'size-11 text-body-l' }
+const sizes = {
+  sm: 'size-8 text-caption',
+  md: 'size-10 text-body-m',
+  lg: 'size-11 text-body-l',
+  xl: 'size-12 text-body-l',
+  '2xl': 'size-20 text-heading-2',
+}
 
 // Photo avatar with an initials fallback and an optional presence dot.
 export default function Avatar({ user, size = 'md', online }) {

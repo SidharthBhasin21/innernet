@@ -30,11 +30,11 @@ const saveViewport = (_, viewport) => {
   }
 }
 
-export default function Canvas({ onOpenFeed }) {
+// `compact` (phones) drops the floating top bar; the mobile header takes over its controls.
+export default function Canvas({ compact = false, showMinimap, onToggleMinimap, onOpenFeed }) {
   const { chats, edges, composer, updateLayout, deleteChats, setEdges, openComposer, closeComposer, startChat } = useCanvas()
   const { screenToFlowPosition } = useReactFlow()
   const [tool, setTool] = useState('select')
-  const [showMinimap, setShowMinimap] = useState(false)
   // React Flow view state (measured size, selection) that isn't part of the chat itself.
   const [nodeView, setNodeView] = useState({})
   const [defaultViewport] = useState(readViewport)
@@ -142,7 +142,7 @@ export default function Canvas({ onOpenFeed }) {
 
       {chats.length === 0 && !composer && <EmptyCanvas onSuggestion={startFromSuggestion} />}
 
-      <CanvasTopBar showMinimap={showMinimap} onToggleMinimap={() => setShowMinimap((s) => !s)} onOpenFeed={onOpenFeed} />
+      {!compact && <CanvasTopBar showMinimap={showMinimap} onToggleMinimap={onToggleMinimap} onOpenFeed={onOpenFeed} />}
       <CanvasToolbar tool={tool} onToolChange={setTool} />
     </div>
   )

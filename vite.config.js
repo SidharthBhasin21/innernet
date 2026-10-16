@@ -10,4 +10,9 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    allowedHosts: [
+      'rectal-kash-uninsinuating.ngrok-free.dev'
+    ]
+  }
 })

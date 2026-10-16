@@ -14,6 +14,8 @@
   html, body, #root {
     height: 100%;
     overflow: hidden;
+    /* No rubber-band scroll or pull-to-refresh fighting the canvas on phones. */
+    overscroll-behavior: none;
   }
   body {
     margin: 0;
@@ -26,6 +28,7 @@
     outline: 2px solid var(--color-indigo);
     outline-offset: 2px;
   }
+  button { -webkit-tap-highlight-color: transparent; }
   ::selection { background: rgba(99, 102, 241, 0.2); }
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
