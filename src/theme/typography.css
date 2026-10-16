@@ -1,0 +1,29 @@
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Type scale: size / line-height / weight (from the design system) */
+  --text-display-xl: 60px;
+  --text-display-xl--line-height: 72px;
+  --text-display-xl--font-weight: 700;
+  --text-display-l: 48px;
+  --text-display-l--line-height: 60px;
+  --text-display-l--font-weight: 700;
+  --text-heading-1: 32px;
+  --text-heading-1--line-height: 40px;
+  --text-heading-1--font-weight: 700;
+  --text-heading-2: 24px;
+  --text-heading-2--line-height: 32px;
+  --text-heading-2--font-weight: 600;
+  --text-heading-3: 20px;
+  --text-heading-3--line-height: 28px;
+  --text-heading-3--font-weight: 600;
+  --text-body-l: 16px;
+  --text-body-l--line-height: 24px;
+  --text-body-m: 14px;
+  --text-body-m--line-height: 20px;
+  --text-body-s: 12px;
+  --text-body-s--line-height: 16px;
+  --text-caption: 11px;
+  --text-caption--line-height: 16px;
+}

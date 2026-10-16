@@ -1,0 +1,145 @@
+/* Global utilities built on the design tokens. */
+
+@utility bg-gradient-primary { background-image: var(--gradient-primary); }
+@utility bg-gradient-soft { background-image: var(--gradient-soft); }
+@utility bg-gradient-accent { background-image: var(--gradient-accent); }
+@utility bg-gradient-canvas { background-image: var(--gradient-canvas); }
+@utility text-gradient-primary {
+  background-image: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@utility surface {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-subtle);
+}
+
+@utility card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Buttons */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding-inline: 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body-m);
+  line-height: var(--text-body-m--line-height);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms, box-shadow 150ms;
+  &:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+}
+@utility btn-primary {
+  background: var(--color-indigo);
+  color: var(--color-white);
+  box-shadow: var(--shadow-subtle);
+  &:hover { background: var(--color-indigo-hover); }
+}
+@utility btn-secondary {
+  background: var(--color-white);
+  color: var(--color-gray-900);
+  border: 1px solid var(--color-gray-200);
+  &:hover { background: var(--color-gray-100); border-color: var(--color-gray-300); }
+}
+@utility btn-tertiary {
+  background: transparent;
+  color: var(--color-indigo);
+  &:hover { background: var(--color-indigo-soft); }
+}
+@utility btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-indigo-soft);
+  color: var(--color-indigo);
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms;
+  &:hover { background: var(--color-indigo); color: var(--color-white); }
+  &:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+}
+
+/* Inputs */
+@utility input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding-inline: 12px;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-900);
+  font-size: var(--text-body-m);
+  line-height: var(--text-body-m--line-height);
+  transition: border-color 150ms, box-shadow 150ms;
+  &::placeholder { color: var(--color-gray-400); }
+  &:focus, &:focus-within { outline: none; border-color: var(--color-indigo); box-shadow: var(--shadow-focus); }
+  &:disabled { background: var(--color-gray-100); color: var(--color-gray-400); cursor: not-allowed; }
+}
+
+/* Chips / tags */
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding-inline: 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-size: var(--text-body-s);
+  line-height: var(--text-body-s--line-height);
+  font-weight: 500;
+}
+@utility chip-online { background: #e8f9ee; color: #15803d; }
+@utility chip-thinking { background: #f1e9ff; color: #7e22ce; }
+@utility chip-offline { background: var(--color-gray-100); color: var(--color-gray-500); }
+
+/* Tabs */
+@utility tab {
+  position: relative;
+  padding: 10px 16px;
+  font-size: var(--text-body-m);
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: color 150ms;
+  &:hover { color: var(--color-gray-900); }
+  &:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+  &[aria-selected="true"] {
+    color: var(--color-indigo);
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline: 16px;
+      bottom: 0;
+      height: 2px;
+      border-radius: var(--radius-full);
+      background: var(--color-indigo);
+    }
+  }
+}

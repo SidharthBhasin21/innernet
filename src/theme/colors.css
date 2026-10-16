@@ -1,0 +1,33 @@
+@theme {
+  /* Primary */
+  --color-indigo: #6366f1;
+  --color-purple: #a855f7;
+  --color-pink: #ec4899;
+  --color-blue: #3b82f6;
+
+  /* Interaction shades of the primary indigo */
+  --color-indigo-hover: #4f46e5;
+  --color-indigo-soft: #eef0ff;
+
+  /* Neutrals */
+  --color-gray-900: #0f172a;
+  --color-gray-700: #334155;
+  --color-gray-500: #64748b;
+  --color-gray-400: #94a3b8;
+  --color-gray-300: #cbd5e1;
+  --color-gray-200: #e2e8f0;
+  --color-gray-100: #f1f5f9;
+  --color-white: #ffffff;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  --gradient-soft: linear-gradient(135deg, #f5f3ff 0%, #e0e7ff 100%);
+  --gradient-accent: linear-gradient(135deg, #ede9fe 0%, #f0f9ff 100%);
+  --gradient-canvas: linear-gradient(180deg, #fafbff 0%, #f8fafc 100%);
+}
