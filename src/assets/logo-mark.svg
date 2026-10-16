@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="840 775 310 320">
-<style>.st1{fill:#222222;}</style>
+<defs>
+<linearGradient id="innernet-mark" gradientUnits="userSpaceOnUse" x1="845" y1="782" x2="1146" y2="1090">
+<stop offset="0" stop-color="#6366f1"/>
+<stop offset="0.5" stop-color="#a855f7"/>
+<stop offset="1" stop-color="#ec4899"/>
+</linearGradient>
+</defs>
+<style>.st1{fill:url(#innernet-mark);}</style>
 <g>
 		<g>
 			<path class="st1" d="M1114.6,848c-0.5-8-4.3-15.3-7.1-20c-11.2-18.9-28.8-34.1-49.6-42.8c-21.5-9-44.7-10.1-65.2-3l0,0.1

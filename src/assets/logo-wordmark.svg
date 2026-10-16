@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="636 1112 740 120">
-<style>.st1{fill:#222222;}</style>
+<defs>
+<linearGradient id="innernet-wordmark" gradientUnits="userSpaceOnUse" x1="641" y1="1170" x2="1370" y2="1170">
+<stop offset="0" stop-color="#6366f1"/>
+<stop offset="0.5" stop-color="#a855f7"/>
+<stop offset="1" stop-color="#ec4899"/>
+</linearGradient>
+</defs>
+<style>.st1{fill:url(#innernet-wordmark);}</style>
 <g>
 		<path class="st1" d="M652.5,1098.3c6.1,0,11.2,5.1,11.2,11.2c0,6.1-5.1,11.2-11.2,11.2c-6.3,0-11.3-5.1-11.3-11.2
 			C641.2,1103.4,646.3,1098.3,652.5,1098.3z M643.6,1141.1c0-4.7,3.9-8.8,9-8.8c4.7,0,8.8,4.1,8.8,8.8v76.6c0,1.4-1.2,2.5-2.5,2.5

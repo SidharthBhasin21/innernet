@@ -7,6 +7,7 @@ import useResizablePanel from '../../hooks/useResizablePanel'
 export default function AppShell() {
   const [view, setView] = useState('canvas')
   const [feedOpen, setFeedOpen] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const feedPanel = useResizablePanel({ key: 'innernet:feed-width', initial: 304, min: 304, max: 520 })
 
@@ -17,7 +18,12 @@ export default function AppShell() {
 
   return (
     <div className="fixed inset-0 flex overflow-hidden bg-gradient-canvas">
-      <Sidebar view={view} onNavigate={navigate} />
+      <Sidebar
+        view={view}
+        onNavigate={navigate}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
+      />
       {/* Middle canvas: intentionally left empty for now. */}
       <main aria-label="Canvas" className="relative min-w-0 flex-1">
         {!feedOpen && (
