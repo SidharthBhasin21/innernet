@@ -6,21 +6,18 @@ export const THEMES = [
     id: 'paper',
     label: 'Paper',
     description: 'Warm paper and ink, like innernet.company',
-    swatch: ['#faf9f5', '#30352e', '#f2d49b'],
     chrome: '#faf9f5',
   },
   {
     id: 'dark',
     label: 'Dark',
     description: 'Charcoal surfaces with paper-colored ink',
-    swatch: ['#171915', '#ece9df', '#f2d49b'],
     chrome: '#171915',
   },
   {
     id: 'classic',
     label: 'Classic',
     description: 'Bright, with soft purple accents',
-    swatch: ['#ffffff', '#6366f1', '#a855f7'],
     chrome: '#ffffff',
   },
 ]

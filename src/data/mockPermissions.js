@@ -1,5 +1,6 @@
 // What the current user's personal agent may share when a connection's agent
-// asks. Conceptual in the prototype: the mock agent engine doesn't read it yet,
+// asks. These are the defaults; the user's choices persist via lib/agentSharing.
+// Conceptual in the prototype: the mock agent engine doesn't read it yet,
 // and the real system will enforce it server-side through a permission gateway.
 export const sharingCategories = [
   { id: 'restaurants', label: 'Restaurant experiences', description: "Places you've eaten and how you rated them", shared: true },

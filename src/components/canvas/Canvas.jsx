@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { addEdge, applyEdgeChanges, applyNodeChanges, Background, BackgroundVariant, MiniMap, ReactFlow, useReactFlow } from '@xyflow/react'
+import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  Background,
+  BackgroundVariant,
+  MiniMap,
+  ReactFlow,
+  useConnection,
+  useReactFlow,
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import ChatNode from '../chat/ChatNode'
 import ComposerNode, { COMPOSER_ID } from './ComposerNode'
@@ -8,6 +18,7 @@ import CanvasToolbar from './CanvasToolbar'
 import EmptyCanvas from './EmptyCanvas'
 import { useCanvas } from '../../store/canvasStore'
 import { getTone } from '../../lib/chatTones'
+import useMediaQuery from '../../hooks/useMediaQuery'
 
 const nodeTypes = { chat: ChatNode, composer: ComposerNode }
 const VIEWPORT_KEY = 'innernet:viewport'
@@ -20,6 +31,13 @@ const readViewport = () => {
   } catch {
     return { x: 0, y: 0, zoom: 1 }
   }
+}
+
+// The chat card under the point where a connection drag ended, if any.
+const chatIdAt = (event) => {
+  const { clientX, clientY } = event.changedTouches?.[0] ?? event
+  const node = document.elementsFromPoint(clientX, clientY).find((el) => el.closest('.react-flow__node-chat'))
+  return node?.closest('.react-flow__node-chat').dataset.id
 }
 
 const saveViewport = (_, viewport) => {
@@ -38,6 +56,9 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   // React Flow view state (measured size, selection) that isn't part of the chat itself.
   const [nodeView, setNodeView] = useState({})
   const [defaultViewport] = useState(readViewport)
+  const connecting = useConnection((connection) => connection.inProgress)
+  // Fingers are less precise than a cursor, so touch drops snap from further away.
+  const coarsePointer = useMediaQuery('(pointer: coarse)')
 
   const nodes = chats.map((chat) => ({
     id: chat.id,
@@ -99,6 +120,18 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
     openComposer({ x: point.x - COMPOSER_OFFSET, y: point.y - COMPOSER_OFFSET })
   }
 
+  const connectChats = (connection) => setEdges(addEdge({ ...connection, type: 'default' }, edges))
+
+  // Dropping a connection anywhere on another card links the two chats, not
+  // only on its small handle — touch has no hover to reveal where that is.
+  const onConnectEnd = (event, { isValid, fromNode, fromHandle }) => {
+    if (isValid || !fromNode) return
+    const otherId = chatIdAt(event)
+    if (!otherId || otherId === fromNode.id) return
+    const [source, target] = fromHandle.type === 'source' ? [fromNode.id, otherId] : [otherId, fromNode.id]
+    connectChats({ source, sourceHandle: null, target, targetHandle: null })
+  }
+
   const startFromSuggestion = (prompt, screenPoint) => {
     startChat({ prompt, position: screenToFlowPosition(screenPoint) })
   }
@@ -106,14 +139,16 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const isHand = tool === 'hand'
 
   return (
-    <div className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'}`}>
+    <div className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'} ${connecting ? 'canvas-connecting' : ''}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={(changes) => setEdges(applyEdgeChanges(changes, edges))}
-        onConnect={(connection) => setEdges(addEdge({ ...connection, type: 'default' }, edges))}
+        onConnect={connectChats}
+        onConnectEnd={onConnectEnd}
+        connectionRadius={coarsePointer ? 40 : 20}
         onPaneClick={onPaneClick}
         onMoveEnd={saveViewport}
         defaultViewport={defaultViewport}

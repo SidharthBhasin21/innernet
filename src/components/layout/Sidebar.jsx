@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { LayoutGrid, PanelLeftClose, PanelLeftOpen, SquarePen } from 'lucide-react'
 import Logo from '../ui/Logo'
 import Avatar from '../ui/Avatar'
 import ConnectionList from '../connections/ConnectionList'
 import AgentChatList from '../chat/AgentChatList'
+import ProfileDialog from '../profile/ProfileDialog'
 import SettingsMenu from './SettingsMenu'
 import { currentUser } from '../../data/mockUsers'
 
@@ -13,6 +15,7 @@ const nav = [
 
 export default function Sidebar({ view, onNavigate, collapsed, onToggleCollapsed }) {
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose
+  const [profileOpen, setProfileOpen] = useState(false)
 
   return (
     <aside
@@ -56,20 +59,29 @@ export default function Sidebar({ view, onNavigate, collapsed, onToggleCollapsed
         <AgentChatList collapsed={collapsed} />
       </div>
 
-      <div className={`relative flex items-center gap-3 border-t border-gray-200 py-4 ${collapsed ? 'justify-center px-0' : 'px-5'}`}>
-        <span title={collapsed ? `${currentUser.name} (@${currentUser.username})` : undefined}>
+      <div className={`relative flex items-center gap-2 border-t border-gray-200 py-3 ${collapsed ? 'justify-center px-0' : 'px-3'}`}>
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          aria-haspopup="dialog"
+          aria-label={collapsed ? `${currentUser.name}: open profile` : 'Open profile'}
+          title={collapsed ? `${currentUser.name} (@${currentUser.username})` : undefined}
+          className={`flex min-w-0 items-center gap-3 rounded-md text-left transition-colors hover:bg-gray-100 focus-ring ${
+            collapsed ? 'p-1' : 'flex-1 px-2 py-1.5'
+          }`}
+        >
           <Avatar user={currentUser} size="lg" />
-        </span>
-        {!collapsed && (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-body-m font-semibold text-gray-900">{currentUser.name}</p>
-              <p className="truncate text-body-s text-gray-500">@{currentUser.username}</p>
-            </div>
-            <SettingsMenu />
-          </>
-        )}
+          {!collapsed && (
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-body-m font-semibold text-gray-900">{currentUser.name}</span>
+              <span className="block truncate text-body-s text-gray-500">@{currentUser.username}</span>
+            </span>
+          )}
+        </button>
+        {!collapsed && <SettingsMenu />}
       </div>
+
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </aside>
   )
 }

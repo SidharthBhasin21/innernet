@@ -32,7 +32,8 @@
   box-shadow: none;
 }
 
-/* Connection handles appear on hover so idle cards stay clean. */
+/* Connection handles appear on hover so idle cards stay clean, and on every
+   card while a connection is being dragged so there's somewhere to drop it. */
 .react-flow .chat-handle.react-flow__handle {
   width: 12px;
   height: 12px;
@@ -44,7 +45,7 @@
 }
 .react-flow__node-chat:hover .chat-handle,
 .react-flow__node-chat.selected .chat-handle,
-.react-flow.connecting .chat-handle { opacity: 1; }
+.canvas-connecting .react-flow .chat-handle { opacity: 1; }
 
 .react-flow .react-flow__resize-control.chat-resize-line { border-color: transparent; }
 .react-flow .react-flow__resize-control.chat-resize-handle {
@@ -56,11 +57,13 @@
   box-shadow: var(--shadow-subtle);
 }
 
-/* Touch screens: bigger targets for connecting and resizing. */
+/* Touch screens: no hover to reveal handles, so keep them visible, with
+   bigger targets for connecting and resizing. */
 @media (pointer: coarse) {
   .react-flow .chat-handle.react-flow__handle {
     width: 20px;
     height: 20px;
+    opacity: 1;
   }
   .react-flow .react-flow__resize-control.chat-resize-handle {
     width: 18px;
