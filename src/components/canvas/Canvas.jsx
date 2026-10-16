@@ -59,6 +59,8 @@ export default function Canvas({ onOpenFeed }) {
       selectable: false,
       deletable: false,
       zIndex: 1000,
+      // React Flow disables pointer events on non-selectable, non-draggable nodes.
+      style: { pointerEvents: 'all' },
       measured: nodeView[COMPOSER_ID]?.measured,
       data: {},
     })

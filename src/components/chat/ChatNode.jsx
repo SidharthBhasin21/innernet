@@ -9,17 +9,20 @@ import { CHAT_SIZE } from '../../lib/chats'
 import { getTone } from '../../lib/chatTones'
 
 // A canvas chat card. Only the header drags the card; the body stays interactive.
-export default function ChatNode({ id, selected, height }) {
+export default function ChatNode({ id, selected }) {
   const chat = useChat(id)
   const { sendMessage, deleteChats } = useCanvas()
   if (!chat) return null
 
   const tone = getTone(chat.tone)
-  const autoHeight = height == null
+  // Until the user resizes, the card fits its content up to a fixed cap.
+  // (React Flow's `height` prop is the measured size, so read our own state.)
+  const autoHeight = chat.size.height == null
 
   return (
     <article
       aria-label={chat.title}
+      style={autoHeight ? { maxHeight: CHAT_SIZE.maxAutoHeight } : undefined}
       className={`group flex h-full flex-col rounded-xl border bg-white shadow-medium transition-shadow animate-pop-in ${tone.border} ${
         selected ? 'shadow-large ring-2 ring-indigo/25' : 'hover:shadow-large'
       }`}
@@ -36,7 +39,7 @@ export default function ChatNode({ id, selected, height }) {
       <Handle type="target" position={Position.Left} className="chat-handle" aria-label="Connect from another chat" />
       <Handle type="source" position={Position.Right} className="chat-handle" aria-label="Connect to another chat" />
 
-      <header className="chat-drag-handle flex cursor-grab items-center gap-3 px-4 pt-4 pb-3 active:cursor-grabbing">
+      <header className="chat-drag-handle flex shrink-0 cursor-grab items-center gap-3 px-4 pt-4 pb-3 active:cursor-grabbing">
         <span className={`inline-flex size-10 shrink-0 items-center justify-center rounded-full ${tone.soft}`}>
           <AgentMascot tone={chat.tone} />
         </span>
@@ -47,14 +50,14 @@ export default function ChatNode({ id, selected, height }) {
         <ChatMenu onDelete={() => deleteChats([chat.id])} />
       </header>
 
-      <ChatMessages chat={chat} autoHeight={autoHeight} />
+      <ChatMessages chat={chat} />
 
-      <div className="px-3 pb-3">
+      <div className="shrink-0 px-3 pb-3">
         <ChatInput
           label={`Message your agent in ${chat.title}`}
           placeholder={chat.status === 'working' ? 'Your agent is working…' : 'Ask a follow-up…'}
           disabled={chat.status === 'working'}
-          onSubmit={(text) => sendMessage(chat.id, text)}
+          onSubmit={(text, attachments) => sendMessage(chat.id, text, attachments)}
         />
       </div>
     </article>

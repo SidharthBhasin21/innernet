@@ -7,7 +7,9 @@ import { formatRelative } from '../../lib/time'
 
 const previewOf = (chat) => {
   if (chat.status === 'working') return chat.activity?.message ?? 'Thinking…'
-  return chat.messages.at(-1)?.content ?? 'New chat'
+  const last = chat.messages.at(-1)
+  if (!last) return 'New chat'
+  return last.content || `📎 ${last.attachments.map((a) => a.name).join(', ')}`
 }
 
 export default function AgentChatList({ collapsed = false }) {

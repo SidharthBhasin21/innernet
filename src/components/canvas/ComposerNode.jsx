@@ -12,7 +12,7 @@ export default function ComposerNode() {
     <div className="nodrag nopan cursor-auto">
       <ChatComposer
         initialPrompt={composer.prompt}
-        onSubmit={(prompt) => startChat({ prompt, position: composer.position })}
+        onSubmit={(prompt, attachments) => startChat({ prompt, attachments, position: composer.position })}
         onCancel={closeComposer}
       />
     </div>

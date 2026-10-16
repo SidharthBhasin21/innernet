@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from 'react'
 import { askAgent } from '../lib/agentEngine'
 import { createChat, createMessage } from '../lib/chats'
+import { forStorage } from '../lib/attachments'
 
 const STORAGE_KEY = 'innernet:canvas:v1'
 
@@ -19,6 +20,12 @@ function load() {
     return { chats: [], edges: [] }
   }
 }
+
+// Large files only have a session preview, so drop their URL before saving.
+const toStorage = (chat) => ({
+  ...chat,
+  messages: chat.messages.map((m) => (m.attachments?.length ? { ...m, attachments: m.attachments.map(forStorage) } : m)),
+})
 
 const mapChat = (state, id, fn) => ({
   ...state,
@@ -75,7 +82,7 @@ export function CanvasProvider({ children }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ chats: state.chats, edges: state.edges }))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ chats: state.chats.map(toStorage), edges: state.edges }))
       } catch {
         // Persistence is best-effort in the prototype.
       }
@@ -83,15 +90,15 @@ export function CanvasProvider({ children }) {
     return () => clearTimeout(timer)
   }, [state.chats, state.edges])
 
-  const sendMessage = async (chatId, text) => {
+  const sendMessage = async (chatId, text, attachments = []) => {
     const prompt = text.trim()
-    if (!prompt) return
+    if (!prompt && !attachments.length) return
     const history = stateRef.current.chats.find((chat) => chat.id === chatId)?.messages ?? []
 
     dispatch({
       type: 'chat/message',
       id: chatId,
-      message: createMessage('user', prompt),
+      message: createMessage('user', prompt, attachments),
       patch: { status: 'working', activity: { status: 'thinking', message: 'Thinking…' } },
     })
 
@@ -99,6 +106,7 @@ export function CanvasProvider({ children }) {
       const reply = await askAgent({
         chatId,
         prompt,
+        attachments,
         history,
         onActivity: (activity) => dispatch({ type: 'chat/update', id: chatId, patch: { activity } }),
       })
@@ -114,10 +122,10 @@ export function CanvasProvider({ children }) {
   }
 
   const actions = {
-    startChat: ({ prompt, position }) => {
-      const chat = createChat({ prompt, position, index: stateRef.current.chats.length })
+    startChat: ({ prompt, attachments = [], position }) => {
+      const chat = createChat({ prompt, attachments, position, index: stateRef.current.chats.length })
       dispatch({ type: 'chat/create', chat })
-      sendMessage(chat.id, prompt)
+      sendMessage(chat.id, prompt, attachments)
       return chat.id
     },
     sendMessage,

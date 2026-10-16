@@ -18,6 +18,11 @@ const privateSteps = [
   { status: 'responding', message: 'Building your answer…', ms: 700 },
 ]
 
+const fileSteps = (attachments) => [
+  { status: 'thinking', message: `Reading ${attachments.length === 1 ? attachments[0].name : `${attachments.length} files`}…`, ms: 1100 },
+  { status: 'responding', message: 'Building your answer…', ms: 700 },
+]
+
 // Topics the mock network has shared experiences about.
 const intents = [
   {
@@ -50,6 +55,17 @@ const intents = [
   },
 ]
 
+const describeFiles = (attachments) => {
+  const names = attachments.map((a) => a.name)
+  return names.length === 1 ? names[0] : `${names.length} files (${names.slice(0, 2).join(', ')}${names.length > 2 ? '…' : ''})`
+}
+
+// Files stay inside this chat; the agent never shares them with the network.
+const fileReply = (prompt, attachments) =>
+  prompt
+    ? `I've read ${describeFiles(attachments)} alongside your question. Here's a first pass on "${prompt}" using what's in them.\n\nThese files stay in this chat and aren't shared with anyone in your network.`
+    : `Got ${describeFiles(attachments)}. What would you like me to do with ${attachments.length === 1 ? 'it' : 'them'} — summarise, compare, or pull out key points?\n\nThese files stay in this chat and aren't shared with anyone in your network.`
+
 const fallbackReply = (prompt) =>
   `Here's a first pass on "${prompt.trim()}".\n\nI kept this one between us — tell me more about what you're after and I can ask people in your network if their experiences would help.`
 
@@ -62,10 +78,19 @@ export function detectIntent(prompt) {
 
 /**
  * Ask the personal agent something in the context of one chat.
- * @param {{ prompt: string, history: Array, onActivity: (activity) => void }} request
+ * @param {{ prompt: string, attachments?: Array, history: Array, onActivity: (activity) => void }} request
  * @returns {Promise<{ content: string }>}
  */
-export async function askAgent({ prompt, onActivity }) {
+export async function askAgent({ prompt, attachments = [], onActivity }) {
+  if (attachments.length) {
+    for (const { status, message, ms } of fileSteps(attachments)) {
+      onActivity({ status, message })
+      await wait(ms)
+    }
+    onActivity({ status: 'complete', message: 'Done' })
+    return { content: fileReply(prompt, attachments) }
+  }
+
   const intent = detectIntent(prompt)
   const isQuestion = /\?\s*$|^(where|what|which|who|any)\b/i.test(prompt.trim())
   const steps = intent?.social || isQuestion ? networkSteps : privateSteps
