@@ -4,6 +4,9 @@ const tones = {
   indigo: ['#6366f1', '#a855f7'],
   green: ['#22c55e', '#3b82f6'],
   purple: ['#a855f7', '#ec4899'],
+  blue: ['#3b82f6', '#6366f1'],
+  amber: ['#f59e0b', '#ec4899'],
+  pink: ['#ec4899', '#a855f7'],
 }
 
 // Mascot for the user's personal agent. Tone only tints it per chat; it is

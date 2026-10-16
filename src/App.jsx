@@ -1,5 +1,10 @@
 import AppShell from './components/layout/AppShell'
+import { CanvasProvider } from './store/canvasStore'
 
 export default function App() {
-  return <AppShell />
+  return (
+    <CanvasProvider>
+      <AppShell />
+    </CanvasProvider>
+  )
 }

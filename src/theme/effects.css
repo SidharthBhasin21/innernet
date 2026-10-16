@@ -23,9 +23,14 @@
   /* Motion */
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  --animate-pop-in: pop-in 220ms var(--ease-soft) both;
 
   @keyframes pulse-soft {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.45; }
+  }
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.97); }
   }
 }

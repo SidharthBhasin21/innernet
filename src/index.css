@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./theme/index.css";
 @import "./theme/utilities.css";
+@import "./theme/canvas.css";
 
 @layer base {
   html {

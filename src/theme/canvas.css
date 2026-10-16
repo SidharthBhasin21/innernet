@@ -1,0 +1,54 @@
+/* React Flow overrides so the canvas matches the Innernet design language. */
+
+.react-flow {
+  --xy-edge-stroke-default: #a5a8f6;
+  --xy-edge-stroke-selected-default: var(--color-indigo);
+  --xy-edge-stroke-width-default: 2;
+  --xy-connectionline-stroke-default: var(--color-indigo);
+  --xy-connectionline-stroke-width-default: 2;
+}
+
+/* Select tool: a plain cursor signals that clicking creates a chat. */
+.canvas-select .react-flow__pane { cursor: default; }
+.canvas-select .react-flow__pane.dragging,
+.canvas-hand .react-flow__pane.dragging { cursor: grabbing; }
+.canvas-hand .react-flow__pane,
+.canvas-hand .react-flow__node { cursor: grab; }
+
+/* Custom nodes draw their own card; drop React Flow's default chrome. */
+.react-flow__node-chat,
+.react-flow__node-composer {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Connection handles appear on hover so idle cards stay clean. */
+.react-flow .chat-handle.react-flow__handle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-white);
+  background: var(--color-indigo);
+  box-shadow: var(--shadow-medium);
+  opacity: 0;
+  transition: opacity 150ms, transform 150ms;
+}
+.react-flow__node-chat:hover .chat-handle,
+.react-flow__node-chat.selected .chat-handle,
+.react-flow.connecting .chat-handle { opacity: 1; }
+
+.react-flow .react-flow__resize-control.chat-resize-line { border-color: transparent; }
+.react-flow .react-flow__resize-control.chat-resize-handle {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-full);
+  background: var(--color-indigo);
+  box-shadow: var(--shadow-subtle);
+}
+
+.react-flow__attribution {
+  background: transparent;
+  color: var(--color-gray-400);
+}

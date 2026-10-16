@@ -1,8 +1,8 @@
-// Agent chats of the user's single personal agent. Each has its own context.
-export const agentChats = [
-  { id: 'japan-trip', title: 'Japan Trip Plan', preview: 'Checking places…', time: '10:24 AM', tone: 'indigo', active: true },
-  { id: 'fitness', title: 'Fitness Routine', preview: '3 workout plans', time: 'Yesterday', tone: 'green' },
-  { id: 'research', title: 'Research Paper', preview: 'Summarized 12 papers', time: '2d', tone: 'purple' },
-  { id: 'product-ideas', title: 'Product Ideas', preview: '5 suggestions', time: '3d', tone: 'green' },
-  { id: 'budget', title: 'Budget Planning', preview: 'Tracking expenses', time: '4d', tone: 'purple' },
+// Starter prompts shown as sticky notes on the empty canvas. Clicking one
+// starts a chat with the user's personal agent at that spot.
+export const chatSuggestions = [
+  { id: 'japan', prompt: 'Plan a 7 day trip to Japan', emoji: '🇯🇵', tone: 'pink', placement: 'top-[14%] left-[10%] -rotate-12' },
+  { id: 'product', prompt: 'Research new product ideas', emoji: '💡', tone: 'blue', placement: 'top-[16%] right-[7%] rotate-12' },
+  { id: 'flights', prompt: 'Compare flight prices for March', emoji: '✈️', tone: 'gray', placement: 'bottom-[22%] left-[10%] -rotate-12' },
+  { id: 'fitness', prompt: 'Create a 4 week fitness plan', emoji: '🏋️', tone: 'green', placement: 'bottom-[18%] right-[5%] rotate-6' },
 ]
