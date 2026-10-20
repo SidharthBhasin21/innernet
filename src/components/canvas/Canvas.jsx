@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   addEdge,
   applyEdgeChanges,
@@ -20,11 +20,13 @@ import EmptyCanvas from './EmptyCanvas'
 import { useCanvas } from '../../store/canvasStore'
 import { getTone } from '../../lib/chatTones'
 import useMediaQuery from '../../hooks/useMediaQuery'
+import useCardPinch from '../../hooks/useCardPinch'
 
 const nodeTypes = { chat: ChatNode, composer: ComposerNode }
 const VIEWPORT_KEY = 'innernet:viewport'
 // Offset so the composer's corner sits just above-left of the click point.
 const COMPOSER_OFFSET = 24
+const ZOOM = { min: 0.25, max: 2 }
 
 const readViewport = () => {
   try {
@@ -60,6 +62,8 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const connecting = useConnection((connection) => connection.inProgress)
   // Fingers are less precise than a cursor, so touch drops snap from further away.
   const coarsePointer = useMediaQuery('(pointer: coarse)')
+  const containerRef = useRef(null)
+  useCardPinch(containerRef, { minZoom: ZOOM.min, maxZoom: ZOOM.max, onEnd: (viewport) => saveViewport(null, viewport) })
 
   const nodes = chats.map((chat) => ({
     id: chat.id,
@@ -140,7 +144,7 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const isHand = tool === 'hand'
 
   return (
-    <div className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'} ${connecting ? 'canvas-connecting' : ''}`}>
+    <div ref={containerRef} className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'} ${connecting ? 'canvas-connecting' : ''}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -153,8 +157,13 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
         onPaneClick={onPaneClick}
         onMoveEnd={saveViewport}
         defaultViewport={defaultViewport}
-        minZoom={0.25}
-        maxZoom={2}
+        minZoom={ZOOM.min}
+        maxZoom={ZOOM.max}
+        // Trackpad: two-finger drag pans, pinch zooms. Touch: pinch zooms and
+        // two-finger drag pans; on cards that's handled by useCardPinch.
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
         zoomOnDoubleClick={false}
         nodesDraggable={!isHand}
         nodesConnectable={!isHand}

@@ -22,7 +22,7 @@ export default function ChatNode({ id, selected }) {
   return (
     <article
       aria-label={chat.title}
-      style={autoHeight ? { maxHeight: CHAT_SIZE.maxAutoHeight } : undefined}
+      style={autoHeight ? { maxHeight: `min(${CHAT_SIZE.maxAutoHeight}px, var(--card-max-height))` } : undefined}
       className={`group flex h-full flex-col rounded-xl border bg-white shadow-medium transition-shadow animate-pop-in ${tone.border} ${
         selected ? 'shadow-large ring-2 ring-indigo/25' : 'hover:shadow-large'
       }`}

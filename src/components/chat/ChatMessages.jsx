@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import AgentActivity from '../agent/AgentActivity'
+import useCanvasScrollArea from '../../hooks/useCanvasScrollArea'
 import AttachmentList from './AttachmentList'
 
 // How close to the bottom (px) still counts as "following" the conversation.
@@ -23,11 +24,13 @@ function Message({ message }) {
   )
 }
 
-// The card has a fixed max height; history scrolls here. `nowheel`/`nodrag`
-// keep scrolling and text selection inside the card instead of moving the canvas.
+// The card has a fixed max height; history scrolls here. Scrolling stays inside
+// the card while pinch and two-finger touch still reach the canvas; `nodrag`
+// keeps text selection from dragging the card.
 export default function ChatMessages({ chat }) {
   const scrollRef = useRef(null)
   const followingRef = useRef(true)
+  useCanvasScrollArea(scrollRef)
   const count = chat.messages.length
   const lastRole = chat.messages.at(-1)?.role
 
@@ -46,7 +49,7 @@ export default function ChatMessages({ chat }) {
         const el = event.currentTarget
         followingRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < STICK_THRESHOLD
       }}
-      className="nowheel nodrag flex min-h-0 flex-1 cursor-auto flex-col gap-2.5 overflow-y-auto overscroll-contain px-4 pb-3 select-text"
+      className="nodrag flex min-h-0 flex-1 cursor-auto touch-pan-y flex-col gap-2.5 overflow-y-auto overscroll-contain px-4 pb-3 select-text"
     >
       {chat.messages.map((message) => (
         <Message key={message.id} message={message} />
