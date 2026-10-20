@@ -1,16 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { AlertTriangle, ArrowUp, BedDouble, CalendarDays, Check, ChevronsDownUp, Footprints, Landmark, MapPin, MessageSquarePlus, Plane, Plus, Sparkles, UtensilsCrossed, Wallet, X } from 'lucide-react'
+import { AlertTriangle, ArrowUp, BedDouble, CalendarDays, Check, ChevronsDownUp, Crosshair, Dumbbell, Footprints, House, Landmark, MapPin, MessageSquarePlus, Plane, Plus, Salad, Sparkles, Target, Timer, UtensilsCrossed, Wallet, Wrench, X } from 'lucide-react'
 import AgentActivity from '../agent/AgentActivity'
 import AgentMascot from '../agent/AgentMascot'
 import ChatMenu from '../chat/ChatMenu'
 import Avatar from '../ui/Avatar'
 import { useCanvas } from '../../store/canvasStore'
 import { specContent, thinkMessage } from '../../lib/trip/planModel'
-import { describeNode } from '../../lib/trip/reasoning'
+import { flowOfPlan } from '../../lib/flows'
 import { getUser } from '../../data/mockUsers'
 
-const icons = { ask: MessageSquarePlus, plane: Plane, budget: Wallet, days: CalendarDays, places: MapPin, food: UtensilsCrossed, stay: BedDouble, pace: Footprints, sights: Landmark }
+const icons = {
+  ask: MessageSquarePlus,
+  plane: Plane,
+  budget: Wallet,
+  days: CalendarDays,
+  places: MapPin,
+  food: UtensilsCrossed,
+  stay: BedDouble,
+  pace: Footprints,
+  sights: Landmark,
+  dumbbell: Dumbbell,
+  goal: Target,
+  sessions: CalendarDays,
+  where: House,
+  diet: Salad,
+  focus: Crosshair,
+  length: Timer,
+  kit: Wrench,
+  meals: UtensilsCrossed,
+}
 
 // Handles only anchor the lines between nodes; the user never connects by hand.
 const anchor = { opacity: 0, pointerEvents: 'none' }
@@ -206,7 +225,7 @@ export default function PlanNode({ id }) {
   const isCustom = node.spec.kind === 'custom'
   const thinking = node.status === 'thinking'
   const picked = node.selected.length
-  const { why, suggested, advice } = thinking || isRoot ? { why: null, suggested: [], advice: [] } : describeNode(plan, node)
+  const { why, suggested, advice } = thinking || isRoot ? { why: null, suggested: [], advice: [] } : flowOfPlan(plan).describeNode(plan, node)
   const unpicked = suggested.filter((optionId) => !node.selected.includes(optionId))
   // Info shows the option under the pointer, else the one chosen last.
   const shown = content.options.find((o) => o.id === (focusId ?? node.selected.at(-1)))

@@ -3,7 +3,8 @@ import { ChevronsUpDown, FileText } from 'lucide-react'
 import AgentMascot from '../agent/AgentMascot'
 import ChatMenu from '../chat/ChatMenu'
 import { useCanvas } from '../../store/canvasStore'
-import { collectPicks, selectionSignature, titleFor } from '../../lib/trip/planModel'
+import { flowOfPlan, planTitle } from '../../lib/flows'
+import { collectPicks, selectionSignature } from '../../lib/trip/planModel'
 
 const MAX_DAYS_SHOWN = 4
 const stripe = { opacity: 0, pointerEvents: 'none' }
@@ -12,31 +13,37 @@ const stripe = { opacity: 0, pointerEvents: 'none' }
 // shows the full document.
 function DocumentPreview({ plan }) {
   const { openDocument } = useCanvas()
+  const flow = flowOfPlan(plan)
   const { itinerary } = plan
+  const preview = flow.preview(itinerary)
   const stale = itinerary.signature !== selectionSignature(plan)
-  const more = itinerary.days.length - MAX_DAYS_SHOWN
+  const more = preview.lines.length - MAX_DAYS_SHOWN
 
   return (
     <button
       type="button"
       onClick={() => openDocument(plan.id)}
-      aria-label={`Open the itinerary document: ${itinerary.title}`}
+      aria-label={`Open the ${flow.copy.documentLabel.toLowerCase()} document: ${preview.title}`}
       className="nodrag group block w-full rounded-lg border border-gray-200 bg-white p-3.5 text-left shadow-subtle transition-shadow hover:shadow-medium focus-ring"
     >
       <span className="flex items-center gap-1.5 text-caption font-semibold text-indigo">
         <FileText className="size-3.5" aria-hidden="true" />
-        Itinerary document
+        {flow.copy.previewLabel}
         {stale && <span className="ml-auto rounded-full bg-(--tone-amber-soft) px-1.5 py-0.5 font-medium text-gray-700">Out of date</span>}
       </span>
-      <span className="mt-1.5 block text-body-l font-semibold text-gray-900">{itinerary.title}</span>
-      <span className="block text-caption text-gray-500">{itinerary.summary}</span>
+      <span className="mt-1.5 block text-body-l font-semibold text-gray-900">{preview.title}</span>
+      <span className="block text-caption text-gray-500">{preview.summary}</span>
       <ul className="mt-2.5 flex flex-col gap-1 border-t border-gray-100 pt-2.5">
-        {itinerary.days.slice(0, MAX_DAYS_SHOWN).map((day) => (
-          <li key={day.n} className="truncate text-caption text-gray-600">
-            <span className="font-medium text-gray-900">Day {day.n}</span> · {day.cityName} · {day.items.map((i) => i.text).slice(0, 2).join(', ')}
+        {preview.lines.slice(0, MAX_DAYS_SHOWN).map((line) => (
+          <li key={line} className="truncate text-caption text-gray-600">
+            {line}
           </li>
         ))}
-        {more > 0 && <li className="text-caption text-gray-400">+ {more} more {more === 1 ? 'day' : 'days'}</li>}
+        {more > 0 && (
+          <li className="text-caption text-gray-400">
+            + {more} more {more === 1 ? preview.unit.replace(/s$/, '') : preview.unit}
+          </li>
+        )}
       </ul>
       <span className="mt-3 inline-flex text-body-s font-medium text-indigo group-hover:underline">Open document</span>
     </button>
@@ -53,7 +60,7 @@ export default function PlanSummaryNode({ id }) {
   const picks = collectPicks(plan)
 
   return (
-    <article aria-label={`${titleFor(plan.prompt)} (collapsed)`} onPointerDown={() => focusPlan(plan.id)} className="w-85 animate-pop-in rounded-xl border border-indigo-border bg-white p-4 shadow-medium">
+    <article aria-label={`${planTitle(plan)} (collapsed)`} onPointerDown={() => focusPlan(plan.id)} className="w-85 animate-pop-in rounded-xl border border-indigo-border bg-white p-4 shadow-medium">
       <Handle type="target" position={Position.Top} style={stripe} isConnectable={false} />
       <Handle type="source" position={Position.Bottom} style={stripe} isConnectable={false} />
 
@@ -62,7 +69,7 @@ export default function PlanSummaryNode({ id }) {
           <AgentMascot tone="indigo" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-body-l font-semibold text-gray-900">{titleFor(plan.prompt)}</h3>
+          <h3 className="truncate text-body-l font-semibold text-gray-900">{planTitle(plan)}</h3>
           <p className="text-body-s text-gray-500">{picks.length === 0 ? 'Nothing picked yet' : `${picks.length} picks`}</p>
         </div>
         <button

@@ -2,9 +2,8 @@ import { createContext, useContext, useEffect, useReducer, useRef } from 'react'
 import { askAgent } from '../lib/agentEngine'
 import { createChat, createId, createMessage } from '../lib/chats'
 import { forStorage } from '../lib/attachments'
-import { draftItinerary } from '../lib/trip/itinerary'
-import { thinkAboutTrip } from '../lib/trip/thinking'
-import { buildCustomNode, createPlan, detectTrip, removeNodeTree, specContent, toggleOption, visibleNodes } from '../lib/trip/planModel'
+import { detectFlow, flowOfPlan } from '../lib/flows'
+import { buildCustomNode, createPlan, removeNodeTree, specContent, toggleOption, visibleNodes } from '../lib/trip/planModel'
 
 const STORAGE_KEY = 'innernet:canvas:v1'
 
@@ -217,12 +216,12 @@ export function CanvasProvider({ children }) {
   }, [state.plans])
 
   // The trip node thinks first, out loud, then says what it found.
-  const think = async (planId, prompt) => {
+  const think = async (planId, prompt, flow) => {
     const root = `${planId}/root`
     const update = (patch) => dispatch({ type: 'plan/update', id: planId, patch })
     update({ activity: { status: 'thinking', message: 'Thinking…' } })
     try {
-      const { note } = await thinkAboutTrip({ prompt, onActivity: (activity) => update({ activity }) })
+      const { note } = await flow.think({ prompt, onActivity: (activity) => update({ activity }) })
       dispatch({ type: 'node/ready', id: root, note })
     } catch {
       dispatch({ type: 'node/ready', id: root })
@@ -237,7 +236,7 @@ export function CanvasProvider({ children }) {
     const update = (patch) => dispatch({ type: 'plan/update', id: planId, patch })
     update({ status: 'drafting', activity: { status: 'thinking', message: 'Thinking…' } })
     try {
-      const itinerary = await draftItinerary({ plan, request, onActivity: (activity) => update({ activity }) })
+      const itinerary = await flowOfPlan(plan).draft({ plan, request, onActivity: (activity) => update({ activity }) })
       update({ status: 'idle', activity: null, itinerary, updatedAt: new Date().toISOString() })
       // The finished itinerary opens as a document.
       dispatch({ type: 'doc/open', id: planId })
@@ -248,11 +247,13 @@ export function CanvasProvider({ children }) {
 
   const actions = {
     startChat: ({ prompt, attachments = [], position }) => {
-      // A trip to Japan becomes a branching plan, not a chat.
-      if (!attachments.length && detectTrip(prompt)) {
-        const plan = createPlan({ prompt: prompt.trim(), position })
+      // A prompt one of the flows recognises (a trip to Japan, a fitness plan…)
+      // becomes a branching plan, not a chat.
+      const flowId = attachments.length ? null : detectFlow(prompt)
+      if (flowId) {
+        const plan = createPlan({ prompt: prompt.trim(), position, flow: flowId })
         dispatch({ type: 'plan/create', plan })
-        think(plan.id, plan.prompt)
+        think(plan.id, plan.prompt, flowOfPlan(plan))
         return plan.id
       }
       const chat = createChat({ prompt, attachments, position, index: stateRef.current.chats.length })

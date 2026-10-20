@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { ArrowUp, FileText, ListChecks, X } from 'lucide-react'
 import AgentActivity from '../agent/AgentActivity'
 import { useCanvas } from '../../store/canvasStore'
-import { collectPicks, titleFor } from '../../lib/trip/planModel'
-
-const DRAFT_PROMPT = 'Draft my whole itinerary'
+import { flowOfPlan, planTitle } from '../../lib/flows'
+import { collectPicks } from '../../lib/trip/planModel'
 
 // The chat input below the canvas. It belongs to the trip that's open: that
 // trip's picks collect here as chips, and asking the agent to draft turns them
@@ -24,13 +23,14 @@ function TrayBody({ plan, compact }) {
   const [text, setText] = useState('')
   const [hint, setHint] = useState(null)
 
+  const copy = flowOfPlan(plan).copy
   const picks = collectPicks(plan)
   const drafting = plan.status === 'drafting'
   const redraft = Boolean(plan.itinerary)
 
   const submit = (request) => {
     if (drafting) return
-    if (!picks.length) return setHint('Pick a few things on the branches first, then I’ll draft your itinerary.')
+    if (!picks.length) return setHint(copy.noPicks)
     setHint(null)
     setText('')
     draftItinerary(plan.id, request)
@@ -46,7 +46,7 @@ function TrayBody({ plan, compact }) {
         <div className="flex items-center gap-1.5 px-1 pb-2 text-caption font-semibold text-gray-500">
           <ListChecks className="size-4 shrink-0 text-indigo" aria-hidden="true" />
           <span className="min-w-0 truncate">
-            Your picks for {titleFor(plan.prompt)}
+            Your picks for {planTitle(plan)}
             {picks.length > 0 && ` · ${picks.length}`}
           </span>
           {redraft && docPlanId !== plan.id && (
@@ -97,7 +97,7 @@ function TrayBody({ plan, compact }) {
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            submit(text.trim() || DRAFT_PROMPT)
+            submit(text.trim() || copy.draft)
           }}
           className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white py-1.5 pr-1.5 pl-3 transition-[border-color,box-shadow] focus-within:border-indigo focus-within:shadow-focus"
         >
@@ -106,13 +106,13 @@ function TrayBody({ plan, compact }) {
             onChange={(event) => setText(event.target.value)}
             disabled={drafting}
             aria-label="Ask your agent about your trip"
-            placeholder={drafting ? 'Your agent is drafting…' : redraft ? 'Ask your agent to draft it again…' : 'Ask your agent to draft your itinerary…'}
+            placeholder={drafting ? 'Your agent is drafting…' : redraft ? copy.placeholderAgain : copy.placeholder}
             // 16px on phones stops iOS Safari from zooming the page on focus.
             className="min-w-0 flex-1 bg-transparent text-body-m text-gray-900 placeholder:text-gray-400 focus:outline-none max-md:text-body-l"
           />
           {!text && !drafting && (
-            <button type="button" onClick={() => submit(DRAFT_PROMPT)} className="btn btn-secondary shrink-0 px-3 py-1.5 text-body-s">
-              {redraft ? 'Draft again' : DRAFT_PROMPT}
+            <button type="button" onClick={() => submit(copy.draft)} className="btn btn-secondary shrink-0 px-3 py-1.5 text-body-s">
+              {redraft ? copy.draftAgain : copy.draft}
             </button>
           )}
           <button

@@ -5,7 +5,7 @@
 
 import { attractions, cities, costs, foods, friendTrips, localDinners, spots, trainBetween } from '../../data/japanPlan'
 import { allocateDays, chooseCities, readContext } from './context'
-import { collectPicks, selectionSignature } from './planModel'
+import { countPicks, selectionSignature } from '../flows/shared'
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const rupees = (n) => `₹${Math.round(n).toLocaleString('en-IN')}`
@@ -184,7 +184,7 @@ export async function draftItinerary({ plan, onActivity }) {
   const list = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items[0])
 
   const steps = [
-    { status: 'thinking', message: `Reading your ${collectPicks(plan).length} picks…`, ms: 800 },
+    { status: 'thinking', message: `Reading your ${countPicks(plan)} picks…`, ms: 800 },
     { status: 'searching_connections', message: `Checking what ${friends} of your friends did in ${list(route.map((id) => cities[id].name))}…`, ms: 1100 },
     { status: 'aggregating', message: `Splitting ${ctx.days} days: ${route.map((id) => `${cities[id].name} ${split[id]}`).join(', ')}…`, ms: 1000 },
     {

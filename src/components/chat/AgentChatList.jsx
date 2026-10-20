@@ -1,10 +1,11 @@
-import { Plane } from 'lucide-react'
+import { Dumbbell, Plane } from 'lucide-react'
 import AgentMascot from '../agent/AgentMascot'
 import SectionHeader from '../ui/SectionHeader'
 import { useCanvas } from '../../store/canvasStore'
 import useCanvasNavigation from '../../hooks/useCanvasNavigation'
 import { getTone } from '../../lib/chatTones'
-import { collectPicks, titleFor } from '../../lib/trip/planModel'
+import { flowOfPlan, planTitle } from '../../lib/flows'
+import { collectPicks } from '../../lib/trip/planModel'
 import { formatRelative } from '../../lib/time'
 
 const previewOf = (chat) => {
@@ -16,7 +17,7 @@ const previewOf = (chat) => {
 
 const planPreview = (plan) => {
   if (plan.status === 'drafting') return plan.activity?.message ?? 'Drafting your itinerary…'
-  if (plan.itinerary) return 'Itinerary ready'
+  if (plan.itinerary) return flowOfPlan(plan).copy.ready
   const picks = collectPicks(plan).length
   return picks ? `${picks} ${picks === 1 ? 'pick' : 'picks'} so far` : 'Nothing picked yet'
 }
@@ -37,7 +38,8 @@ function toRows(chats, plans) {
     ...plans.map((plan) => ({
       kind: 'trip',
       id: plan.id,
-      title: titleFor(plan.prompt),
+      title: planTitle(plan),
+      icon: flowOfPlan(plan).icon,
       preview: planPreview(plan),
       updatedAt: plan.updatedAt,
       working: plan.status === 'drafting',
@@ -86,7 +88,7 @@ export default function AgentChatList({ collapsed = false, variant = 'sidebar', 
               className={`flex w-full items-center gap-3 rounded-md text-left transition-colors hover:bg-gray-100 focus-ring ${page ? 'py-2.5' : 'py-2'} ${collapsed ? 'justify-center px-0' : 'px-3'}`}
             >
               <span className={`inline-flex shrink-0 items-center justify-center rounded-full ${page ? 'size-12' : 'size-10'} ${row.kind === 'trip' ? 'bg-indigo-soft text-indigo' : getTone(row.tone).soft}`}>
-                {row.kind === 'trip' ? <Plane className="size-5" aria-hidden="true" /> : <AgentMascot tone={row.tone} />}
+                {row.kind === 'trip' ? row.icon === 'dumbbell' ? <Dumbbell className="size-5" aria-hidden="true" /> : <Plane className="size-5" aria-hidden="true" /> : <AgentMascot tone={row.tone} />}
               </span>
               {!collapsed && (
                 <>

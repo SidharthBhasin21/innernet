@@ -1,131 +1,45 @@
-// The trip tree. A plan starts as one node (the trip itself) with four branches
-// (budget, days, places, food). Choosing an option on a node can grow new
-// nodes from it, with context about that choice. Everything is plain data, so
-// the tree can be saved and later come from a real agent.
+// The tree of a plan. A plan starts as one node (the trip, the fitness plan…) with
+// a few branches. Choosing an option on a node can grow new nodes from it, with
+// context about that choice. Everything is plain data, so the tree can be saved
+// and later come from a real agent. What each node asks, and how the agent
+// reasons about it, belongs to the plan's flow (lib/flows).
 //
 // plan.nodes: [{ id, parentId, order, spec, selected: [optionId], status, thinkMs }]
-//   spec: what the node asks, e.g. { kind: 'attractions', city: 'kyoto' }
+//   spec: what the node asks, e.g. { kind: 'attractions', city: 'kyoto' }; specs of
+//   flows other than trip also carry `flow`.
 //   status: 'thinking' while the agent works it out (shown as a placeholder), then
 //   'ready'. A node appears once the node above it is ready.
 
-import { attractions, budgets, cities, CITY_ORDER, dayOptions, foods, paces, spots, stays } from '../../data/japanPlan'
 import { createId } from '../chats'
-import { answerPrompt } from './custom'
+import { flowOfPlan, flows, flowOfSpec } from '../flows'
+import { selectionSignature } from '../flows/shared'
 
-const NUMBER_WORDS = { three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, fourteen: 14 }
-
-// A prompt starts a trip plan when it's about travelling somewhere we know.
-export const detectTrip = (prompt) =>
-  /\b(japan|tokyo|kyoto|osaka)\b/i.test(prompt) && /\b(trip|travel|plan|planner|itinerary|holiday|vacation|visit|week|days?)\b/i.test(prompt)
-
-function parseDays(prompt) {
-  const digits = prompt.match(/(\d+)[\s-]*(days?|nights?)\b/i)
-  if (digits) return digits[1]
-  const word = prompt.match(/\b(three|four|five|six|seven|eight|nine|ten|fourteen)[\s-]*(days?|nights?)\b/i)
-  if (word) return String(NUMBER_WORDS[word[1].toLowerCase()])
-  return /\b(a|one) week\b/i.test(prompt) ? '7' : null
-}
-
-// --- What each node asks ---------------------------------------------------------
+// --- What each node asks (the flow answers; these are the shared cases) ----------
 
 const pickOf = (options, id) => options.find((o) => o.id === id)
-const cityOptions = () => CITY_ORDER.map((id) => ({ id, label: cities[id].name, detail: cities[id].detail, by: cities[id].by, quote: cities[id].quote }))
+// Trip is the default flow, so its specs stay unmarked and older saves still match.
+const stamp = (flowId) => (flowId && flowId !== 'trip' ? { flow: flowId } : {})
 
 /** The question, context and options a node shows, from its spec. */
 export function specContent(spec) {
-  switch (spec.kind) {
-    case 'root':
-      return { icon: 'plane', title: spec.title, question: null, options: [] }
-    case 'budget':
-      return { icon: 'budget', title: 'Budget', question: 'What’s your budget per person?', multi: false, options: budgets.map((b) => ({ ...b, chip: `Budget ${b.label}` })) }
-    case 'days':
-      return { icon: 'days', title: 'Days', question: 'How many days?', multi: false, options: dayOptions.map((d) => ({ ...d, chip: d.label })) }
-    case 'places':
-      return { icon: 'places', title: 'Places', question: 'Which cities do you want to visit?', multi: true, options: cityOptions().map((c) => ({ ...c, chip: c.label })) }
-    case 'food':
-      return { icon: 'food', title: 'Food', question: 'What do you want to eat?', multi: true, options: foods.map((f) => ({ ...f, chip: f.label })) }
-    case 'stay': {
-      const budget = pickOf(budgets, spec.tier)
-      return {
-        icon: 'stay',
-        title: 'Where to stay',
-        question: 'Where do you want to stay?',
-        context: `With a budget of ${budget.label}`,
-        multi: false,
-        options: stays[spec.tier].map((s) => ({ ...s, detail: `${s.detail} · ₹${s.nightly.toLocaleString('en-IN')} a night each`, chip: `Stay: ${s.label}` })),
-      }
-    }
-    case 'pace':
-      return { icon: 'pace', title: 'Pace', question: 'How packed should the days be?', context: 'Because of how long you’re going', multi: false, options: paces.map((p) => ({ ...p, chip: `Pace: ${p.label}` })) }
-    case 'attractions':
-      return {
-        icon: 'sights',
-        title: cities[spec.city].name,
-        question: `What do you want to see in ${cities[spec.city].name}?`,
-        context: `Because you chose ${cities[spec.city].name}`,
-        multi: true,
-        options: attractions[spec.city].map((a) => ({ ...a, chip: a.label })),
-      }
-    case 'spots': {
-      const food = pickOf(foods, spec.food)
-      return {
-        icon: 'food',
-        title: food.label,
-        question: `Where do you want to eat ${food.label.toLowerCase()}?`,
-        context: `Because you picked ${food.label.toLowerCase()}`,
-        multi: true,
-        options: spots[spec.food].map((s) => ({ ...s, chip: s.label })),
-      }
-    }
-    case 'custom':
-      // A question the user typed: the agent's answer is stored on the node.
-      return { icon: 'ask', title: spec.answer.title, question: spec.answer.title, context: `You asked: “${spec.prompt}”`, multi: true, options: spec.answer.options }
-    default:
-      return { icon: 'plane', title: '', question: null, options: [] }
-  }
+  const flow = flowOfSpec(spec)
+  if (spec.kind === 'root') return { icon: flow.icon, title: spec.title, question: null, options: [] }
+  // A question the user typed: the agent's answer is stored on the node.
+  if (spec.kind === 'custom') return { icon: 'ask', title: spec.answer.title, question: spec.answer.title, context: `You asked: “${spec.prompt}”`, multi: true, options: spec.answer.options }
+  return flow.specContent(spec)
 }
 
-// What the agent says it's doing while a node is still a placeholder.
+/** What the agent says it's doing while a node is still a placeholder. */
 export function thinkMessage(spec) {
-  switch (spec.kind) {
-    case 'budget':
-      return 'Checking what your friends spent…'
-    case 'days':
-      return 'Looking at how long they stayed…'
-    case 'places':
-      return 'Checking where they went…'
-    case 'food':
-      return 'Asking what they ate…'
-    case 'stay':
-      return 'Looking at places to stay in your budget…'
-    case 'pace':
-      return 'Working out how packed your days can be…'
-    case 'attractions':
-      return `Looking at what friends did in ${cities[spec.city].name}…`
-    case 'spots':
-      return 'Finding where they ate it…'
-    case 'custom':
-      return `Thinking about “${spec.prompt.length > 40 ? `${spec.prompt.slice(0, 39)}…` : spec.prompt}”…`
-    default:
-      return 'Thinking…'
-  }
+  if (spec.kind === 'custom') return `Thinking about “${spec.prompt.length > 40 ? `${spec.prompt.slice(0, 39)}…` : spec.prompt}”…`
+  return flowOfSpec(spec).thinkMessage(spec)
 }
 
 /** Nodes that choosing an option on `spec` should grow, with the key that names each. */
 function childSpecs(spec, optionId) {
-  const order = (list) => Math.max(0, list.indexOf(optionId))
-  switch (spec.kind) {
-    case 'budget':
-      return [{ key: 'stay', order: 0, spec: { kind: 'stay', tier: optionId } }]
-    case 'days':
-      return [{ key: 'pace', order: 0, spec: { kind: 'pace' } }]
-    case 'places':
-      return [{ key: `attractions-${optionId}`, order: order(CITY_ORDER), spec: { kind: 'attractions', city: optionId } }]
-    case 'food':
-      return [{ key: `spots-${optionId}`, order: order(foods.map((f) => f.id)), spec: { kind: 'spots', food: optionId } }]
-    default:
-      return []
-  }
+  return flowOfSpec(spec)
+    .childSpecs(spec, optionId)
+    .map((child) => ({ ...child, spec: { ...child.spec, ...stamp(spec.flow) } }))
 }
 
 // --- Building and changing the tree ----------------------------------------------
@@ -133,23 +47,28 @@ function childSpecs(spec, optionId) {
 const nodeId = (planId, key) => `${planId}/${key}`
 const sameSpec = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
-export function titleFor(prompt) {
-  const days = parseDays(prompt)
-  return days ? `${days}-day trip to Japan` : 'Trip to Japan'
-}
-
-export function createPlan({ prompt, position }) {
+export function createPlan({ prompt, position, flow: flowId = 'trip' }) {
+  const flow = flows[flowId]
   const id = createId('plan')
   const now = new Date().toISOString()
-  // The trip node thinks first; its branches then appear one after another.
-  const root = { id: nodeId(id, 'root'), parentId: null, order: 0, spec: { kind: 'root', title: titleFor(prompt), prompt }, selected: [], status: 'thinking' }
-  const branch = (key, order, selected = []) => ({ id: nodeId(id, key), parentId: root.id, order, spec: { kind: key }, selected, status: 'thinking', thinkMs: 900 + order * 450 })
-  const days = parseDays(prompt)
+  // The top node thinks first; its branches then appear one after another.
+  const root = { id: nodeId(id, 'root'), parentId: null, order: 0, spec: { kind: 'root', title: flow.title(prompt), prompt, ...stamp(flowId) }, selected: [], status: 'thinking' }
+  const branches = flow.branches(prompt).map((branch, order) => ({
+    id: nodeId(id, branch.kind),
+    parentId: root.id,
+    order,
+    spec: { kind: branch.kind, ...stamp(flowId) },
+    selected: branch.selected ?? [],
+    status: 'thinking',
+    thinkMs: 900 + order * 450,
+  }))
   let plan = {
     id,
+    flow: flowId,
     prompt,
     position,
-    nodes: [root, branch('budget', 0), branch('days', 1, days ? [days] : []), branch('places', 2), branch('food', 3)],
+    nodes: [root, ...branches],
+    // The finished document (an itinerary, a workout plan…), once drafted.
     itinerary: null,
     collapsed: false,
     status: 'idle',
@@ -157,8 +76,10 @@ export function createPlan({ prompt, position }) {
     createdAt: now,
     updatedAt: now,
   }
-  // A number of days in the prompt is already a choice, so its follow-up grows.
-  if (days) plan = { ...plan, nodes: syncChildren(plan.nodes, nodeId(id, 'days')) }
+  // Anything already answered in the prompt (say, the number of days) grows its follow-up.
+  branches.filter((branch) => branch.selected.length).forEach((branch) => {
+    plan = { ...plan, nodes: syncChildren(plan.nodes, branch.id) }
+  })
   return plan
 }
 
@@ -228,7 +149,7 @@ export function buildCustomNode(plan, parentId, prompt, askId) {
     parentId,
     // After the questions the agent asked itself.
     order: 1000 + earlier,
-    spec: { kind: 'custom', prompt: text, answer: answerPrompt(text, plan, parent) },
+    spec: { kind: 'custom', prompt: text, answer: flowOfPlan(plan).answerPrompt(text, plan, parent), ...stamp(plan.flow) },
     selected: [],
     status: 'thinking',
     thinkMs: 1400,
@@ -284,14 +205,13 @@ export function collectPicks(plan) {
     })
 }
 
-// Changes when any choice changes, so an itinerary can tell it's out of date.
-export const selectionSignature = (plan) => JSON.stringify(plan.nodes.map((n) => [n.id, n.selected]))
+export { selectionSignature }
 
 // --- Laying the tree out ----------------------------------------------------------
 
 export const NODE_WIDTH = 300
 export const ROOT_WIDTH = 280
-// A collapsed tree is one node: a trip card, with its document previewed on it.
+// A collapsed tree is one node: a plan card, with its document previewed on it.
 export const COLLAPSED_WIDTH = 340
 export const collapsedHeight = (plan) => (plan.itinerary ? 380 : 190)
 const GAP_X = 40
@@ -299,12 +219,12 @@ const GAP_Y = 72
 
 // Before a node is measured: a header, the option chips (short labels wrap
 // three to a row, long ones go one per row), and the reserved info area.
-const LONG_LABELS = new Set(['attractions', 'spots', 'stay', 'budget', 'pace', 'custom'])
 const estimateHeight = (node) => {
   if (node.spec.kind === 'root') return node.status === 'thinking' ? 130 : 170
   if (node.status === 'thinking') return 190
   const n = specContent(node.spec).options.length
-  return 250 + (LONG_LABELS.has(node.spec.kind) ? n * 40 : Math.ceil(n / 3) * 40)
+  const long = node.spec.kind === 'custom' || flowOfSpec(node.spec).longLabels.has(node.spec.kind)
+  return 250 + (long ? n * 40 : Math.ceil(n / 3) * 40)
 }
 const widthOf = (node) => (node.spec.kind === 'root' ? ROOT_WIDTH : NODE_WIDTH)
 
