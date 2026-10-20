@@ -1,6 +1,8 @@
 import { useReactFlow, useStoreApi } from '@xyflow/react'
 import { useCanvas } from '../store/canvasStore'
 import { isMobileViewport } from './useMediaQuery'
+import { FRAME } from './usePlanFocus'
+import { visibleNodes } from '../lib/trip/planModel'
 
 // Approximate composer footprint, used to centre it and keep it off other cards.
 const COMPOSER_SIZE = { width: 320, height: 150 }
@@ -11,13 +13,21 @@ const overlaps = (spot, rect) =>
 
 // Viewport moves shared by the sidebar, search and the mobile shell.
 export default function useCanvasNavigation() {
-  const { openComposer } = useCanvas()
+  const { openComposer, plans } = useCanvas()
   const { fitView, getViewport, setViewport, getNodes } = useReactFlow()
   const flowStore = useStoreApi()
 
   // Phones need tight padding, or the card zooms out to a thumbnail.
   const focusChat = (id) => {
     fitView({ nodes: [{ id }], duration: 500, maxZoom: 1, padding: isMobileViewport() ? 0.08 : 0.6 })
+  }
+
+  // Fly to a trip: its collapsed node, or the whole tree, clear of the floating bars.
+  const focusPlan = (id) => {
+    const plan = plans.find((p) => p.id === id)
+    if (!plan) return
+    const nodes = plan.collapsed ? [{ id: `${plan.id}/summary` }] : visibleNodes(plan).map((n) => ({ id: n.id }))
+    fitView({ nodes, duration: 500, minZoom: 0.3, maxZoom: 1, padding: isMobileViewport() ? 0.08 : FRAME })
   }
 
   // Moves a spot down past any chat card it would land on.
@@ -47,5 +57,5 @@ export default function useCanvasNavigation() {
     openComposer(spot)
   }
 
-  return { focusChat, openComposerAtCenter }
+  return { focusChat, focusPlan, openComposerAtCenter }
 }
