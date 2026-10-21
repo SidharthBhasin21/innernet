@@ -43,7 +43,7 @@ export function answerPrompt(prompt, plan) {
 
   const options = topic.options.map((o) => ({ id: slug(o.label), label: o.label, chip: o.label, detail: o.detail, by: o.by, quote: o.quote }))
   const recommended = options.filter((o) => o.by)
-  const goal = ctx.goal ? ` for your ${ctx.goal.label.toLowerCase()} goal` : ''
+  const goal = ctx.goal ? `, with your goal to ${ctx.goal.label.toLowerCase()} in mind` : ''
   return {
     topic: topic.id,
     city: null,

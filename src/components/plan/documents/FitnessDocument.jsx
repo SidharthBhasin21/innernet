@@ -29,12 +29,12 @@ function Week({ week }) {
             </p>
             <dl className="mt-2 flex flex-col gap-2.5">
               {session.items.map((item) => (
-                <div key={item.text} className="grid grid-cols-[8.5rem_1fr] gap-3">
-                  <dt className="pt-0.5 text-body-s text-gray-400">{item.detail}</dt>
-                  <dd>
+                <div key={item.text} className="grid grid-cols-[1fr_auto] gap-3">
+                  <dt>
                     <span className="text-body-m text-gray-900">{item.text}</span>
                     <Said by={item.by} quote={item.quote} />
-                  </dd>
+                  </dt>
+                  <dd className="pt-0.5 text-right text-body-s text-gray-500">{item.detail}</dd>
                 </div>
               ))}
             </dl>
