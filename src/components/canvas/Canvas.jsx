@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   addEdge,
   applyEdgeChanges,
@@ -12,6 +12,11 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import ChatNode from '../chat/ChatNode'
+import ItineraryDocument from '../plan/ItineraryDocument'
+import PlanNode from '../plan/PlanNode'
+import PlanSummaryNode from '../plan/PlanSummaryNode'
+import PlanTray from '../plan/PlanTray'
+import SelectionAsk from '../plan/SelectionAsk'
 import ComposerNode, { COMPOSER_ID } from './ComposerNode'
 import CanvasTopBar from './CanvasTopBar'
 import CanvasToolbar from './CanvasToolbar'
@@ -20,11 +25,18 @@ import EmptyCanvas from './EmptyCanvas'
 import { useCanvas } from '../../store/canvasStore'
 import { getTone } from '../../lib/chatTones'
 import useMediaQuery from '../../hooks/useMediaQuery'
+import useCardPinch from '../../hooks/useCardPinch'
+import usePlanFocus from '../../hooks/usePlanFocus'
+import { COLLAPSED_WIDTH, edgesOf, layoutPlan, visibleNodes } from '../../lib/trip/planModel'
 
-const nodeTypes = { chat: ChatNode, composer: ComposerNode }
+const nodeTypes = { chat: ChatNode, composer: ComposerNode, plan: PlanNode, planSummary: PlanSummaryNode }
+// Space between one trip and the next.
+const PLAN_GAP = 140
+const ZERO = { x: 0, y: 0 }
 const VIEWPORT_KEY = 'innernet:viewport'
 // Offset so the composer's corner sits just above-left of the click point.
 const COMPOSER_OFFSET = 24
+const ZOOM = { min: 0.25, max: 2 }
 
 const readViewport = () => {
   try {
@@ -51,7 +63,7 @@ const saveViewport = (_, viewport) => {
 
 // `compact` (phones) drops the floating top bar; the mobile header takes over its controls.
 export default function Canvas({ compact = false, showMinimap, onToggleMinimap, onOpenFeed }) {
-  const { chats, edges, composer, updateLayout, deleteChats, setEdges, openComposer, closeComposer, startChat } = useCanvas()
+  const { chats, plans, edges, composer, updateLayout, deleteChats, setEdges, openComposer, closeComposer, startChat, movePlanNodes, docPlanId } = useCanvas()
   const { screenToFlowPosition } = useReactFlow()
   const [tool, setTool] = useState('select')
   // React Flow view state (measured size, selection) that isn't part of the chat itself.
@@ -60,6 +72,9 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const connecting = useConnection((connection) => connection.inProgress)
   // Fingers are less precise than a cursor, so touch drops snap from further away.
   const coarsePointer = useMediaQuery('(pointer: coarse)')
+  const containerRef = useRef(null)
+  useCardPinch(containerRef, { minZoom: ZOOM.min, maxZoom: ZOOM.max, onEnd: (viewport) => saveViewport(null, viewport) })
+  usePlanFocus(plans, Boolean(docPlanId))
 
   const nodes = chats.map((chat) => ({
     id: chat.id,
@@ -72,6 +87,55 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
     measured: nodeView[chat.id]?.measured,
     data: {},
   }))
+  // Trip plans sit in a row, left to right, starting where the first was begun.
+  // Each is a tree (top to bottom) or, collapsed, a single node, so folding a
+  // trip away gives its room back and trips never overlap. Positions come from
+  // the trees, so these nodes aren't dragged; they use real measured heights.
+  const heights = Object.fromEntries(Object.entries(nodeView).flatMap(([id, view]) => (view.measured?.height ? [[id, view.measured.height]] : [])))
+  // Trip nodes drag by their header; they can't be selected, deleted or connected by hand.
+  const fixed = {
+    draggable: tool !== 'hand',
+    dragHandle: '.plan-drag-handle',
+    selectable: false,
+    deletable: false,
+    connectable: false,
+    focusable: false,
+    style: { pointerEvents: 'all' },
+    data: {},
+  }
+  // For each trip node: where the layout would put it, so a drag can be turned
+  // back into an offset. The trip's top node (or its collapsed node) moves the whole trip.
+  const placed = {}
+  const planEdges = []
+  let planX = plans[0]?.position.x ?? 0
+  const planY = plans[0]?.position.y ?? 0
+  plans.forEach((plan) => {
+    const tripOffset = plan.offset ?? ZERO
+    if (plan.collapsed) {
+      const id = `${plan.id}/summary`
+      placed[id] = { planId: plan.id, base: { x: planX, y: planY }, wholeTrip: true }
+      nodes.push({ ...fixed, id, type: 'planSummary', position: { x: planX + tripOffset.x, y: planY + tripOffset.y }, measured: nodeView[id]?.measured })
+      planX += COLLAPSED_WIDTH + PLAN_GAP
+      return
+    }
+    const layout = layoutPlan(plan, heights)
+    // Shift the tree so its left edge starts at planX (it reaches left of its top node).
+    const originX = planX - layout.left
+    visibleNodes(plan).forEach((node) => {
+      const base = { x: originX + layout.offsets[node.id].x + tripOffset.x, y: planY + layout.offsets[node.id].y + tripOffset.y }
+      const own = node.offset ?? ZERO
+      placed[node.id] = { planId: plan.id, base: node.parentId ? base : { x: base.x - tripOffset.x, y: base.y - tripOffset.y }, wholeTrip: !node.parentId }
+      nodes.push({
+        ...fixed,
+        id: node.id,
+        type: 'plan',
+        position: node.parentId ? { x: base.x + own.x, y: base.y + own.y } : base,
+        measured: nodeView[node.id]?.measured,
+      })
+    })
+    planX += layout.right - layout.left + PLAN_GAP
+    edgesOf(plan).forEach((edge) => planEdges.push({ ...edge, selectable: false, deletable: false, focusable: false }))
+  })
   if (composer) {
     nodes.push({
       id: COMPOSER_ID,
@@ -96,9 +160,15 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
     const next = applyNodeChanges(changes, nodes)
     const layout = {}
     const view = {}
+    const moves = []
     next.forEach((node) => {
       view[node.id] = { measured: node.measured, selected: node.selected }
       const prev = prevById.get(node.id)
+      // A dragged trip node: keep how far it is from where the layout puts it.
+      if (placed[node.id] && prev && node.position !== prev.position) {
+        const { planId, base, wholeTrip } = placed[node.id]
+        moves.push({ planId, nodeId: wholeTrip ? null : node.id, offset: { x: node.position.x - base.x, y: node.position.y - base.y } })
+      }
       if (node.type !== 'chat' || !prev) return
       const patch = {}
       if (node.position !== prev.position) patch.position = node.position
@@ -106,6 +176,7 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
       if (Object.keys(patch).length) layout[node.id] = patch
     })
     setNodeView(view)
+    if (moves.length) movePlanNodes(moves)
     if (Object.keys(layout).length) updateLayout(layout)
   }
 
@@ -140,10 +211,10 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const isHand = tool === 'hand'
 
   return (
-    <div className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'} ${connecting ? 'canvas-connecting' : ''}`}>
+    <div ref={containerRef} className={`relative h-full w-full ${isHand ? 'canvas-hand' : 'canvas-select'} ${connecting ? 'canvas-connecting' : ''}`}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={[...edges, ...planEdges]}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={(changes) => setEdges(applyEdgeChanges(changes, edges))}
@@ -153,8 +224,13 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
         onPaneClick={onPaneClick}
         onMoveEnd={saveViewport}
         defaultViewport={defaultViewport}
-        minZoom={0.25}
-        maxZoom={2}
+        minZoom={ZOOM.min}
+        maxZoom={ZOOM.max}
+        // Trackpad: two-finger drag pans, pinch zooms. Touch: pinch zooms and
+        // two-finger drag pans; on cards that's handled by useCardPinch.
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
         zoomOnDoubleClick={false}
         nodesDraggable={!isHand}
         nodesConnectable={!isHand}
@@ -168,7 +244,13 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
             pannable
             zoomable
             position="bottom-right"
-            nodeColor={(node) => (node.type === 'chat' ? getTone(chats.find((c) => c.id === node.id)?.tone).accent : 'var(--color-gray-300)')}
+            nodeColor={(node) =>
+              node.type === 'chat'
+                ? getTone(chats.find((c) => c.id === node.id)?.tone).accent
+                : node.type === 'plan' || node.type === 'planSummary'
+                  ? 'var(--color-indigo)'
+                  : 'var(--color-gray-300)'
+            }
             nodeBorderRadius={12}
             maskColor="var(--canvas-minimap-mask)"
             className="mb-24! overflow-hidden rounded-lg border border-gray-200 shadow-medium"
@@ -176,7 +258,10 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
         )}
       </ReactFlow>
 
-      {chats.length === 0 && !composer && <EmptyCanvas onSuggestion={startFromSuggestion} />}
+      {chats.length === 0 && plans.length === 0 && !composer && <EmptyCanvas onSuggestion={startFromSuggestion} />}
+      <PlanTray compact={compact} />
+      <SelectionAsk />
+      <ItineraryDocument />
 
       {!compact && <CanvasTopBar showMinimap={showMinimap} onToggleMinimap={onToggleMinimap} onOpenFeed={onOpenFeed} />}
       {compact ? (

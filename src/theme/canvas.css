@@ -1,6 +1,9 @@
 /* React Flow overrides so the canvas matches the Innernet design language. */
 
 :root {
+  /* The tallest a card may be at 100% zoom: the screen minus the bars around
+     the canvas, so one chat always fits and scrolls inside. */
+  --card-max-height: calc(100dvh - 168px);
   --canvas-dot: #dfe3ec;
   --canvas-minimap-mask: rgba(241, 245, 249, 0.6);
   --canvas-edge: #a5a8f6;
@@ -55,6 +58,11 @@
   border-radius: var(--radius-full);
   background: var(--color-indigo);
   box-shadow: var(--shadow-subtle);
+}
+
+@media (max-width: 767px) {
+  /* Phones also have the header, tab bar and floating toolbar to clear. */
+  :root { --card-max-height: calc(100dvh - 248px); }
 }
 
 /* Touch screens: no hover to reveal handles, so keep them visible, with

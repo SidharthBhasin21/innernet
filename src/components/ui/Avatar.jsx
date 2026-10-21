@@ -10,6 +10,7 @@ const hues = {
 }
 
 const sizes = {
+  xs: 'size-6 text-caption',
   sm: 'size-8 text-caption',
   md: 'size-10 text-body-m',
   lg: 'size-11 text-body-l',

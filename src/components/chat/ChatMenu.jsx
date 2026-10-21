@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MoreHorizontal, Trash2 } from 'lucide-react'
 
-export default function ChatMenu({ onDelete }) {
+export default function ChatMenu({ onDelete, deleteLabel = 'Delete chat' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -40,7 +40,7 @@ export default function ChatMenu({ onDelete }) {
             className="flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-body-m text-error hover:bg-gray-100 focus-ring"
           >
             <Trash2 className="size-4" aria-hidden="true" />
-            Delete chat
+            {deleteLabel}
           </button>
         </div>
       )}
