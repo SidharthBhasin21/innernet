@@ -11,7 +11,7 @@ import { documentBodies } from './documents'
 // drafting, and from a collapsed tree. The title, summary, out-of-date warning
 // and notes are shared; the body is the flow's own.
 export default function ItineraryDocument() {
-  const { plans, docPlanId, closeDocument } = useCanvas()
+  const { plans, docPlanId, closeDocument, swapItem } = useCanvas()
   const bodyRef = useRef(null)
   useCanvasScrollArea(bodyRef)
   const plan = plans.find((p) => p.id === docPlanId)
@@ -31,7 +31,7 @@ export default function ItineraryDocument() {
   const stale = itinerary.signature !== selectionSignature(plan)
 
   return (
-    <aside aria-label={`${flow.copy.documentLabel} document`} className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-gray-200 bg-white shadow-large animate-pop-in">
+    <aside aria-label={`${flow.copy.documentLabel} document`} data-lookup-plan={plan.id} data-lookup-node={plan.nodes.find((n) => !n.parentId).id} className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-gray-200 bg-white shadow-large animate-pop-in">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-6 py-3.5">
         <p className="truncate text-body-s text-gray-500">
           {planTitle(plan)} · {flow.copy.documentLabel}
@@ -60,7 +60,7 @@ export default function ItineraryDocument() {
             </p>
           ))}
 
-          <Body itinerary={itinerary} />
+          <Body itinerary={itinerary} onSwap={(key, alt) => swapItem(plan.id, key, alt)} />
 
           <p className="border-t border-gray-200 pt-5 text-caption text-gray-400">{flow.copy.footer}</p>
         </article>

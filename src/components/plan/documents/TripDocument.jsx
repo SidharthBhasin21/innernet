@@ -2,10 +2,11 @@ import { ExternalLink, Plane, Train } from 'lucide-react'
 import Avatar from '../../ui/Avatar'
 import { flightHelp } from '../../../lib/trip/flights'
 import { getUser } from '../../../data/mockUsers'
+import SwapControl, { SwappedTag } from './Swap'
 
 const rupees = (n) => `₹${Math.round(n).toLocaleString('en-IN')}`
 
-function Day({ day }) {
+function Day({ day, onSwap }) {
   return (
     <section aria-label={`Day ${day.n}`} className="border-t border-gray-200 pt-5">
       <h3 className="text-heading-3 text-gray-900">
@@ -25,13 +26,15 @@ function Day({ day }) {
               <dt className="pt-0.5 text-body-s text-gray-400">{item.slot}</dt>
               <dd>
                 <span className="text-body-l text-gray-900">{item.text}</span>
-                {item.chosen && <span className="ml-2 rounded-full bg-indigo-soft px-2 py-0.5 align-middle text-caption font-medium text-indigo">Your pick</span>}
+                <SwappedTag item={item} />
+                {item.chosen && <span className="ml-2 rounded-full bg-indigo-soft px-2 py-0.5 align-middle text-caption font-medium text-indigo">Picked</span>}
                 {item.detail && (
                   <span className="mt-1 flex items-start gap-2 text-body-s text-gray-500">
                     {friend && <Avatar user={friend} size="xs" />}
                     <span>{friend ? `“${item.detail}” · ${friend.name.split(' ')[0]}` : item.detail}</span>
                   </span>
                 )}
+                <SwapControl item={item} onSwap={onSwap} />
               </dd>
             </div>
           )
@@ -113,11 +116,11 @@ function Flights({ itinerary }) {
 }
 
 // The trip's part of the document: each day, what it costs, and where to book flights.
-export default function TripDocument({ itinerary }) {
+export default function TripDocument({ itinerary, onSwap }) {
   return (
     <>
       {itinerary.days.map((day) => (
-        <Day key={day.n} day={day} />
+        <Day key={day.n} day={day} onSwap={onSwap} />
       ))}
       <Costs budget={itinerary.budget} />
       <Flights itinerary={itinerary} />

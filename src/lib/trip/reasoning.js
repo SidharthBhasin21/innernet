@@ -161,7 +161,8 @@ function sights(ctx, node) {
   }
   return {
     why: `You’ll have about ${plural(here, 'day')} in ${cities[city].name} at a ${ctx.pace.label.toLowerCase()} pace, which fits around ${plural(capacity, 'place')}. ${recommended.length ? `${plural(recommended.length, 'friend')} recommended ${recommended.length === 1 ? 'this' : 'these'}.` : ''}`.trim(),
-    suggested: ordered.slice(0, capacity).map((o) => o.id),
+    // Meals and the arrival day take some sight slots, so suggest a little under capacity.
+    suggested: ordered.slice(0, capacity - (here > 1 ? Math.ceil(here * 0.6) : 0)).map((o) => o.id),
     advice,
   }
 }

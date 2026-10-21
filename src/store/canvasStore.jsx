@@ -3,7 +3,7 @@ import { askAgent } from '../lib/agentEngine'
 import { createChat, createId, createMessage } from '../lib/chats'
 import { forStorage } from '../lib/attachments'
 import { detectFlow, flowOfPlan } from '../lib/flows'
-import { buildCustomNode, createPlan, removeNodeTree, specContent, toggleOption, visibleNodes } from '../lib/trip/planModel'
+import { applySuggestions, buildCustomNode, buildLookupNode, createPlan, removeNodeTree, specContent, toggleOption, visibleNodes } from '../lib/trip/planModel'
 
 const STORAGE_KEY = 'innernet:canvas:v1'
 
@@ -125,6 +125,31 @@ function reducer(state, action) {
         activePlanId: action.planId,
         plans: state.plans.map((plan) => (plan.id === action.planId ? { ...plan, nodes: [...plan.nodes, action.node], updatedAt: new Date().toISOString() } : plan)),
       }
+    // Replace a whole plan (draft-first fills in the tree before drafting).
+    case 'plan/replace':
+      return { ...state, plans: state.plans.map((plan) => (plan.id === action.plan.id ? action.plan : plan)) }
+    // Swap one part of the drafted document for another (or put the original back
+    // when `alt` is null). The document is rebuilt from the plan with its swaps.
+    case 'plan/swap':
+      return {
+        ...state,
+        plans: state.plans.map((plan) => {
+          if (plan.id !== action.planId) return plan
+          const swaps = { ...(plan.swaps ?? {}) }
+          if (action.alt) swaps[action.key] = action.alt
+          else delete swaps[action.key]
+          const next = { ...plan, swaps }
+          return { ...next, itinerary: next.itinerary ? flowOfPlan(next).build(next) : null, updatedAt: new Date().toISOString() }
+        }),
+      }
+    // A looked-up phrase the user decided to keep stops being temporary.
+    case 'plan/keepNode':
+      return {
+        ...state,
+        plans: state.plans.map((plan) =>
+          plan.id === action.planId ? { ...plan, nodes: plan.nodes.map((n) => (n.id === action.nodeId ? { ...n, spec: { ...n.spec, temp: false } } : n)) } : plan,
+        ),
+      }
     case 'plan/removeNode':
       return { ...state, plans: state.plans.map((plan) => (plan.id === action.planId ? removeNodeTree(plan, action.nodeId) : plan)) }
     case 'plan/collapse':
@@ -230,8 +255,8 @@ export function CanvasProvider({ children }) {
   }
 
   // The agent drafts the whole itinerary from what's chosen on the plan.
-  const draft = async (planId, request) => {
-    const plan = stateRef.current.plans.find((p) => p.id === planId)
+  const draft = async (planId, request, latest) => {
+    const plan = latest ?? stateRef.current.plans.find((p) => p.id === planId)
     if (!plan || plan.status === 'drafting') return
     const update = (patch) => dispatch({ type: 'plan/update', id: planId, patch })
     update({ status: 'drafting', activity: { status: 'thinking', message: 'Thinking…' } })
@@ -240,8 +265,10 @@ export function CanvasProvider({ children }) {
       update({ status: 'idle', activity: null, itinerary, updatedAt: new Date().toISOString() })
       // The finished itinerary opens as a document.
       dispatch({ type: 'doc/open', id: planId })
+      return true
     } catch {
       update({ status: 'error', activity: null })
+      return false
     }
   }
 
@@ -269,10 +296,31 @@ export function CanvasProvider({ children }) {
       if (!plan || !text || !plan.nodes.some((n) => n.id === parentId && n.status !== 'thinking')) return
       dispatch({ type: 'plan/addNode', planId, node: buildCustomNode(plan, parentId, text, createId('ask')) })
     },
+    // Ask the agent about text the user selected: a temporary node under `parentId`.
+    askAboutText: (planId, parentId, phrase, query = '') => {
+      const plan = stateRef.current.plans.find((p) => p.id === planId)
+      if (!plan || !phrase.trim() || !plan.nodes.some((n) => n.id === parentId && n.status !== 'thinking')) return
+      // The node needs the tree on screen to appear in.
+      if (plan.collapsed) dispatch({ type: 'plan/collapse', id: planId, collapsed: false })
+      dispatch({ type: 'plan/addNode', planId, node: buildLookupNode(plan, parentId, phrase, createId('look'), query) })
+    },
+    keepNode: (planId, nodeId) => dispatch({ type: 'plan/keepNode', planId, nodeId }),
     removeNode: (planId, nodeId) => dispatch({ type: 'plan/removeNode', planId, nodeId }),
     pickSuggested: (planId, nodeId, optionIds) => dispatch({ type: 'plan/pickMany', planId, nodeId, optionIds }),
     toggleOption: (planId, nodeId, optionId) => dispatch({ type: 'plan/toggle', planId, nodeId, optionId }),
     draftItinerary: draft,
+    // Draft-first: the agent answers every question itself, drafts the whole
+    // document, and tucks the tree away. Anything can then be swapped in the
+    // document, or the tree opened to change a choice.
+    draftFirst: async (planId) => {
+      const plan = stateRef.current.plans.find((p) => p.id === planId)
+      if (!plan || plan.status === 'drafting' || plan.nodes.some((n) => !n.parentId && n.status === 'thinking')) return
+      const next = applySuggestions(plan)
+      dispatch({ type: 'plan/replace', plan: next })
+      const done = await draft(planId, flowOfPlan(plan).copy.draft, next)
+      if (done) dispatch({ type: 'plan/collapse', id: planId, collapsed: true })
+    },
+    swapItem: (planId, key, alt) => dispatch({ type: 'plan/swap', planId, key, alt }),
     focusPlan: (id) => dispatch({ type: 'plan/focus', id }),
     deletePlan: (id) => dispatch({ type: 'plan/delete', id }),
     movePlanNodes: (moves) => dispatch({ type: 'plan/move', moves }),

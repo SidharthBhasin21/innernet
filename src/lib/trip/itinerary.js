@@ -47,16 +47,47 @@ function makePools(picks, city, route) {
   }
 }
 
-const toItem = (slot, source, kind) => ({
-  slot,
-  kind,
-  text: source.label,
-  detail: source.quote ?? source.detail ?? '',
-  by: person(source.by),
-  chosen: Boolean(source.chosen),
-})
+// One slot of a day. `key` names what the agent first put there, so a swap the
+// user made (plan.swaps[key]) can be put back on it every time the plan is rebuilt.
+const toItem = (slot, source, kind, { key, city, meal, dusk, swaps }) => {
+  const swap = swaps[key]
+  const shown = swap ?? source
+  return {
+    key,
+    slot,
+    kind,
+    city,
+    meal,
+    dusk,
+    text: shown.label,
+    detail: shown.quote ?? shown.detail ?? '',
+    by: person(shown.by),
+    chosen: swap ? false : Boolean(source.chosen),
+    ...(swap && { swapped: true, original: { label: source.label, detail: source.quote ?? source.detail ?? '', by: person(source.by) } }),
+  }
+}
 
-function buildDays(picks, route, perCity) {
+// What else could go in each slot: unplaced options from the same city and kind,
+// friends' favourites first. A swapped slot can always go back to the original.
+function withAlternatives(days) {
+  const placed = new Set(days.flatMap((d) => d.items.flatMap((i) => [i.text, i.original?.label])))
+  const asOption = (s) => ({ label: s.label, detail: s.quote ?? s.detail ?? '', by: person(s.by) })
+  days.forEach((day) =>
+    day.items.forEach((item) => {
+      let pool = []
+      if (item.kind === 'sight' || item.kind === 'free') pool = attractions[day.city].filter((a) => item.kind === 'free' || (a.when === 'dusk') === Boolean(item.dusk))
+      else if (item.kind === 'food')
+        pool = [
+          ...Object.values(spots).flat().filter((s) => s.city === day.city && (s.meal ?? 'dinner') === item.meal),
+          ...(item.meal === 'dinner' ? localDinners[day.city].map((label) => ({ label, detail: '' })) : []),
+        ]
+      const options = pool.filter((s) => !placed.has(s.label)).map(asOption).sort((a, b) => Number(Boolean(b.by)) - Number(Boolean(a.by)))
+      item.alternatives = [...(item.original ? [{ ...item.original, original: true }] : []), ...options.slice(0, 4)]
+    }),
+  )
+}
+
+function buildDays(picks, route, perCity, swaps) {
   const slots = SLOTS[picks.pace.id]
   const days = []
   route.forEach((city, cityIndex) => {
@@ -66,18 +97,26 @@ function buildDays(picks, route, perCity) {
       const items = slots.map((slot) => {
         if (slot === 'Evening') {
           const dinner = pools.dinners.shift() ?? { label: `Dinner near your hotel in ${cities[city].name}` }
-          return toItem(slot, dinner, 'food')
+          return toItem(slot, dinner, 'food', { key: dinner.label, city, meal: 'dinner', swaps })
         }
         // A breakfast spot takes a city's second morning (the first is for arriving);
         // a lunch spot takes an afternoon.
         const breakfastDay = perCity[city] > 1 ? 1 : 0
-        if (slot === 'Morning' && n !== 1 && i === breakfastDay && pools.breakfasts.length) return toItem(slot, pools.breakfasts.shift(), 'food')
-        if (slot === 'Afternoon' && pools.lunches.length) return toItem(slot, pools.lunches.shift(), 'food')
+        if (slot === 'Morning' && n !== 1 && i === breakfastDay && pools.breakfasts.length) {
+          const spot = pools.breakfasts.shift()
+          return toItem(slot, spot, 'food', { key: spot.label, city, meal: 'breakfast', swaps })
+        }
+        if (slot === 'Afternoon' && pools.lunches.length) {
+          const spot = pools.lunches.shift()
+          return toItem(slot, spot, 'food', { key: spot.label, city, meal: 'lunch', swaps })
+        }
         // Sights best at dusk go in the day's last sight slot; the rest earlier.
         const dusk = slot === slots.filter((s) => s !== 'Evening').at(-1)
         const at = pools.sights.findIndex((s) => (s.when === 'dusk') === dusk)
         const sight = pools.sights.splice(at >= 0 ? at : 0, 1)[0]
-        return sight ? toItem(slot, sight, 'sight') : toItem(slot, { label: `Free time to wander ${cities[city].name}`, detail: 'Follow your feet, or rest.' }, 'free')
+        return sight
+          ? toItem(slot, sight, 'sight', { key: sight.label, city, dusk, swaps })
+          : toItem(slot, { label: `Free time to wander ${cities[city].name}`, detail: 'Follow your feet, or rest.' }, 'free', { key: `free:${n}:${slot}`, city, swaps })
       })
       const first = i === 0
       const prev = route[cityIndex - 1]
@@ -120,13 +159,14 @@ export function buildItinerary(plan) {
   const picks = readContext(plan)
   const { route, dropped, assumed } = chooseCities(picks)
   const perCity = allocateDays(route, picks.days)
-  const days = buildDays(picks, route, perCity)
+  const days = buildDays(picks, route, perCity, plan.swaps ?? {})
+  withAlternatives(days)
 
   const notes = []
   if (assumed) notes.push('You didn’t pick cities, so I used Tokyo and Kyoto, where most of your friends went.')
   if (!picks.daysChosen) notes.push('You didn’t pick how long, so I planned 7 days.')
   if (dropped.length) notes.push(`There weren’t enough days for ${dropped.map((id) => cities[id].name).join(' and ')}, so I left ${dropped.length === 1 ? 'it' : 'them'} out.`)
-  const placed = new Set(days.flatMap((d) => d.items.map((i) => i.text)))
+  const placed = new Set(days.flatMap((d) => d.items.flatMap((i) => [i.text, i.original?.label])))
   picks.spotIds
     .map(({ id, food }) => byId(spots[food], id))
     .filter((s) => s && route.includes(s.city) && !placed.has(s.label))

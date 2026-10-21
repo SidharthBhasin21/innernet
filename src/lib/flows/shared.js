@@ -1,7 +1,8 @@
 // Small helpers every flow (trip, fitness…) shares.
 
 // Changes when any choice changes, so a drafted document can tell it's out of date.
-export const selectionSignature = (plan) => JSON.stringify(plan.nodes.map((n) => [n.id, n.selected]))
+// Looked-up phrases hold no choices, so they don't count.
+export const selectionSignature = (plan) => JSON.stringify(plan.nodes.filter((n) => n.spec.kind !== 'lookup').map((n) => [n.id, n.selected]))
 
 // How many things the user has picked on nodes the agent has finished.
 export const countPicks = (plan) => plan.nodes.filter((n) => n.status !== 'thinking').reduce((sum, n) => sum + n.selected.length, 0)

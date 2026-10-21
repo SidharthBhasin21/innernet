@@ -19,7 +19,10 @@ function sessionFocus(areas, perWeek) {
   })
 }
 
-function buildWeek(week, ctx, goal, where, areas) {
+// How an exercise reads in a given week: sets follow the week, cardio grows, the rest carry their own.
+const detailOf = (ex, theme, week) => (ex.sets ? theme.sets : ex.minutes ? `${ex.minutes + (week - 1) * 2} min` : ex.detail)
+
+function buildWeek(week, ctx, goal, where, areas, swaps) {
   const theme = themeOf(week, ctx.weeks)
   const count = PER_SESSION[ctx.length] ?? 4
   const days = WEEKDAYS[ctx.perWeek] ?? WEEKDAYS[4]
@@ -31,13 +34,22 @@ function buildWeek(week, ctx, goal, where, areas) {
       const item = pool[Math.floor(i / pools.length) % pool.length]
       if (!picked.includes(item)) picked.push(item)
     }
+    // What the user swapped in (by the exercise it replaced) takes its place; the
+    // others in the same focus areas are what it could be swapped for.
+    const shown = picked.map((ex) => swaps[ex.text]?.ex ?? ex)
+    const taken = new Set([...picked, ...shown].map((ex) => ex.text))
+    const others = [...pools.flat(), ...areas.flatMap((area) => exercises[area.id][where.id])].filter((ex, i, all) => !taken.has(ex.text) && all.findIndex((o) => o.text === ex.text) === i)
+    const option = (ex, original = false) => ({ label: ex.text, detail: detailOf(ex, theme, week), by: ex.by, quote: ex.quote, ex, ...(original && { original: true }) })
     const items = [
       { text: 'Warm-up', detail: '5 min easy movement and joint circles' },
-      ...picked.map((ex) => ({
-        text: ex.text,
-        detail: ex.sets ? theme.sets : ex.minutes ? `${ex.minutes + (week - 1) * 2} min` : ex.detail,
-        by: ex.by,
-        quote: ex.quote,
+      ...picked.map((ex, i) => ({
+        key: ex.text,
+        text: shown[i].text,
+        detail: detailOf(shown[i], theme, week),
+        by: shown[i].by,
+        quote: shown[i].quote,
+        ...(shown[i] !== ex && { swapped: true }),
+        alternatives: [...(shown[i] !== ex ? [option(ex, true)] : []), ...others.slice(0, 4).map((o) => option(o))],
       })),
     ]
     return { day: days[s], title: focus.map((f) => f.label).join(' + '), minutes: ctx.length, items }
@@ -45,7 +57,7 @@ function buildWeek(week, ctx, goal, where, areas) {
   return { n: week, theme: theme.theme, note: theme.note, sessions }
 }
 
-function buildNutrition(ctx, diet) {
+function buildNutrition(ctx, diet, swaps) {
   const pool = meals[diet.id]
   const chosen = ctx.meals.length ? ctx.meals : pool.filter((m) => m.by).concat(pool.filter((m) => !m.by)).slice(0, 4)
   const slots = new Set(chosen.map((m) => m.meal))
@@ -53,7 +65,28 @@ function buildNutrition(ctx, diet) {
   const filled = [...chosen, ...['Breakfast', 'Lunch', 'Dinner'].filter((m) => !slots.has(m)).map((m) => pool.find((p) => p.meal === m)).filter(Boolean)]
   return {
     headline: `${diet.label}: ${diet.detail.toLowerCase()}`,
-    meals: filled.sort((a, b) => MEAL_ORDER.indexOf(a.meal) - MEAL_ORDER.indexOf(b.meal)).map((m) => ({ slot: m.meal, text: m.label, detail: m.detail, by: m.by, quote: m.quote, chosen: ctx.meals.includes(m) })),
+    meals: filled
+      .sort((a, b) => MEAL_ORDER.indexOf(a.meal) - MEAL_ORDER.indexOf(b.meal))
+      .map((m) => {
+        const key = `meal:${m.label}`
+        const swap = swaps[key]
+        const shown = swap ?? m
+        // Other meals for the same time of day that aren't already in the plan.
+        const taken = new Set(filled.map((f) => f.label).concat(Object.values(swaps).map((s) => s.label)))
+        const option = (o, original = false) => ({ label: o.label, detail: o.detail, by: o.by, quote: o.quote, ...(original && { original: true }) })
+        const others = pool.filter((o) => o.meal === m.meal && !taken.has(o.label)).sort((a, b) => Number(Boolean(b.by)) - Number(Boolean(a.by)))
+        return {
+          key,
+          slot: m.meal,
+          text: shown.label,
+          detail: shown.detail,
+          by: shown.by,
+          quote: shown.quote,
+          chosen: !swap && ctx.meals.includes(m),
+          ...(swap && { swapped: true }),
+          alternatives: [...(swap ? [option(m, true)] : []), ...others.slice(0, 4).map((o) => option(o))],
+        }
+      }),
   }
 }
 
@@ -64,6 +97,7 @@ export function buildPlan(plan) {
   const diet = ctx.diet ?? byId(diets, 'balanced')
   const options = focusFor(goal.id)
   const areas = ctx.focus.length ? ctx.focus : options.slice(0, Math.min(ctx.perWeek, options.length))
+  const swaps = plan.swaps ?? {}
   const notes = []
 
   if (!ctx.goal) notes.push('You didn’t pick a goal, so I planned for building strength.')
@@ -76,8 +110,8 @@ export function buildPlan(plan) {
 
   const gear = (ctx.kit.length ? ctx.kit : (kits[where.id] ?? []).filter((k) => k.by).slice(0, 2)).map((k) => ({ label: k.label, detail: k.detail, by: k.by }))
   const extras = ctx.extras.filter((e) => !e.note).map((e) => ({ label: e.label, detail: e.detail, by: e.by, quote: e.quote }))
-  const weeks = Array.from({ length: ctx.weeks }, (_, i) => buildWeek(i + 1, ctx, goal, where, areas))
-  const nutrition = buildNutrition(ctx, diet)
+  const weeks = Array.from({ length: ctx.weeks }, (_, i) => buildWeek(i + 1, ctx, goal, where, areas, swaps))
+  const nutrition = buildNutrition(ctx, diet, swaps)
 
   const people = new Set([...weeks.flatMap((w) => w.sessions.flatMap((s) => s.items.map((i) => i.by))), ...nutrition.meals.map((m) => m.by), ...gear.map((g) => g.by), ...extras.map((e) => e.by)].filter(Boolean))
   return {

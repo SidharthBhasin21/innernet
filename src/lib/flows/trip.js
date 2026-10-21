@@ -3,10 +3,12 @@
 // any flow that has this shape.
 
 import { attractions, budgets, cities, CITY_ORDER, dayOptions, foods, paces, spots, stays } from '../../data/japanPlan'
+import { glossary } from '../../data/japanGlossary'
 import { answerPrompt } from '../trip/custom'
-import { draftItinerary } from '../trip/itinerary'
+import { buildItinerary, draftItinerary } from '../trip/itinerary'
 import { describeNode } from '../trip/reasoning'
 import { thinkAboutTrip } from '../trip/thinking'
+import { lookupPhrase } from './lookup'
 
 const NUMBER_WORDS = { three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, fourteen: 14 }
 
@@ -134,7 +136,9 @@ export default {
   describeNode,
   think: thinkAboutTrip,
   draft: draftItinerary,
+  build: buildItinerary,
   answerPrompt,
+  lookup: (phrase, where, query) => lookupPhrase(phrase, glossary, where, query),
   copy: {
     draft: 'Draft my whole itinerary',
     draftAgain: 'Draft again',

@@ -16,6 +16,7 @@ import ItineraryDocument from '../plan/ItineraryDocument'
 import PlanNode from '../plan/PlanNode'
 import PlanSummaryNode from '../plan/PlanSummaryNode'
 import PlanTray from '../plan/PlanTray'
+import SelectionAsk from '../plan/SelectionAsk'
 import ComposerNode, { COMPOSER_ID } from './ComposerNode'
 import CanvasTopBar from './CanvasTopBar'
 import CanvasToolbar from './CanvasToolbar'
@@ -62,7 +63,7 @@ const saveViewport = (_, viewport) => {
 
 // `compact` (phones) drops the floating top bar; the mobile header takes over its controls.
 export default function Canvas({ compact = false, showMinimap, onToggleMinimap, onOpenFeed }) {
-  const { chats, plans, edges, composer, updateLayout, deleteChats, setEdges, openComposer, closeComposer, startChat, movePlanNodes } = useCanvas()
+  const { chats, plans, edges, composer, updateLayout, deleteChats, setEdges, openComposer, closeComposer, startChat, movePlanNodes, docPlanId } = useCanvas()
   const { screenToFlowPosition } = useReactFlow()
   const [tool, setTool] = useState('select')
   // React Flow view state (measured size, selection) that isn't part of the chat itself.
@@ -73,7 +74,7 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
   const coarsePointer = useMediaQuery('(pointer: coarse)')
   const containerRef = useRef(null)
   useCardPinch(containerRef, { minZoom: ZOOM.min, maxZoom: ZOOM.max, onEnd: (viewport) => saveViewport(null, viewport) })
-  usePlanFocus(plans)
+  usePlanFocus(plans, Boolean(docPlanId))
 
   const nodes = chats.map((chat) => ({
     id: chat.id,
@@ -259,6 +260,7 @@ export default function Canvas({ compact = false, showMinimap, onToggleMinimap, 
 
       {chats.length === 0 && plans.length === 0 && !composer && <EmptyCanvas onSuggestion={startFromSuggestion} />}
       <PlanTray compact={compact} />
+      <SelectionAsk />
       <ItineraryDocument />
 
       {!compact && <CanvasTopBar showMinimap={showMinimap} onToggleMinimap={onToggleMinimap} onOpenFeed={onOpenFeed} />}

@@ -10,12 +10,17 @@ export const FRAME = { top: '96px', bottom: '300px', left: '48px', right: '48px'
 // as a whole, a choice that grows new nodes eases over to them (and the node
 // they grew from), and collapsing or expanding a trip frames its new shape.
 // Positions are measured a moment later, so this waits.
-export default function usePlanFocus(plans) {
+export default function usePlanFocus(plans, documentOpen = false) {
   const { fitView } = useReactFlow()
   const known = useRef(null)
   // Trips still being built for the first time: once the agent has finished
   // thinking about every node, frame the whole finished tree once.
   const building = useRef(new Set())
+  // The document panel covers the right of the canvas; frame clear of it.
+  const covered = useRef(documentOpen)
+  useEffect(() => {
+    covered.current = documentOpen
+  }, [documentOpen])
 
   useEffect(() => {
     // Only what's on screen counts: branches appear as the agent finishes thinking.
@@ -47,6 +52,6 @@ export default function usePlanFocus(plans) {
     known.current = snapshot
     if (!target) return
     // Not cancelled by later updates (say, an activity message), or the move would be lost.
-    setTimeout(() => fitView({ nodes: target, duration: 600, padding: FRAME, minZoom: 0.3, maxZoom: 1 }), 150)
+    setTimeout(() => fitView({ nodes: target, duration: 600, padding: covered.current ? { ...FRAME, right: '600px' } : FRAME, minZoom: 0.3, maxZoom: 1 }), 150)
   }, [plans, fitView])
 }

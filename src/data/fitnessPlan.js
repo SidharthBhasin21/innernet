@@ -94,18 +94,26 @@ export const meals = {
     { id: 'chicken-rice', meal: 'Lunch', label: 'Chicken & rice bowl', detail: 'The classic training meal', by: 'karan' },
     { id: 'yogurt-nuts', meal: 'Snack', label: 'Greek yogurt & nuts', detail: 'Easy protein between meals', by: 'karan' },
     { id: 'dal-curd', meal: 'Dinner', label: 'Dal, rice & curd', detail: 'Light, with complete protein' },
+    { id: 'peanut-toast', meal: 'Breakfast', label: 'Peanut-butter toast & milk', detail: 'Quick protein for busy mornings' },
+    { id: 'grilled-fish', meal: 'Dinner', label: 'Grilled fish & vegetables', detail: 'Lean protein, light on carbs' },
   ],
   balanced: [
     { id: 'poha', meal: 'Breakfast', label: 'Poha with peanuts', detail: 'Light and filling', by: 'priya' },
     { id: 'roti-dal', meal: 'Lunch', label: 'Roti, dal & sabzi', detail: 'Plain home food, sensible portions', by: 'priya', quote: 'I didn’t change what I ate, just how much.' },
     { id: 'fruit-nuts', meal: 'Snack', label: 'Fruit & a handful of nuts', detail: 'Keeps you away from biscuits' },
     { id: 'khichdi', meal: 'Dinner', label: 'Moong khichdi', detail: 'Easy on the stomach after training', by: 'rohan' },
+    { id: 'besan-chilla', meal: 'Breakfast', label: 'Besan chilla & curd', detail: 'Savoury pancakes with protein' },
+    { id: 'rajma', meal: 'Lunch', label: 'Rajma-chawal bowl', detail: 'Beans and rice, filling and cheap' },
+    { id: 'paneer-sabzi', meal: 'Dinner', label: 'Grilled paneer & sabzi', detail: 'Protein-rich and light' },
   ],
   veg: [
     { id: 'tofu-scramble', meal: 'Breakfast', label: 'Tofu or paneer scramble', detail: 'Protein without eggs', by: 'meera' },
     { id: 'chole-salad', meal: 'Lunch', label: 'Chole & big salad', detail: 'Chickpeas for protein and fibre', by: 'meera', quote: 'Chole and a big salad kept me full.' },
     { id: 'sprouts', meal: 'Snack', label: 'Sprouts chaat', detail: 'Cheap and crunchy' },
     { id: 'dal-quinoa', meal: 'Dinner', label: 'Dal with quinoa', detail: 'Complete protein, light on the stomach' },
+    { id: 'chia-oats', meal: 'Breakfast', label: 'Overnight oats with chia', detail: 'Make it the night before' },
+    { id: 'paneer-salad', meal: 'Lunch', label: 'Paneer tikka salad', detail: 'Protein with fresh vegetables' },
+    { id: 'palak-tofu', meal: 'Dinner', label: 'Palak tofu & roti', detail: 'Iron-rich and easy' },
   ],
 }
 

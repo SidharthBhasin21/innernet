@@ -25,12 +25,15 @@ export function specContent(spec) {
   const flow = flowOfSpec(spec)
   if (spec.kind === 'root') return { icon: flow.icon, title: spec.title, question: null, options: [] }
   // A question the user typed: the agent's answer is stored on the node.
-  if (spec.kind === 'custom') return { icon: 'ask', title: spec.answer.title, question: spec.answer.title, context: `You asked: “${spec.prompt}”`, multi: true, options: spec.answer.options }
+  // A phrase the user selected and asked about: a temporary note until they keep it.
+  if (spec.kind === 'lookup') return { icon: 'lookup', title: spec.answer.title, question: spec.answer.title, context: spec.answer.query ? `You asked about “${spec.phrase}”: “${spec.answer.query}”` : `You selected: “${spec.phrase}”`, multi: false, options: [] }
+  if (spec.kind === 'custom') return { icon: 'ask', title: spec.answer.title, question: spec.answer.title, context: spec.phrase ? `You asked about “${spec.phrase}”: “${spec.prompt}”` : `You asked: “${spec.prompt}”`, multi: true, options: spec.answer.options }
   return flow.specContent(spec)
 }
 
 /** What the agent says it's doing while a node is still a placeholder. */
 export function thinkMessage(spec) {
+  if (spec.kind === 'lookup') return `Looking up “${spec.phrase.length > 40 ? `${spec.phrase.slice(0, 39)}…` : spec.phrase}”…`
   if (spec.kind === 'custom') return `Thinking about “${spec.prompt.length > 40 ? `${spec.prompt.slice(0, 39)}…` : spec.prompt}”…`
   return flowOfSpec(spec).thinkMessage(spec)
 }
@@ -104,7 +107,7 @@ function syncChildren(nodes, parentId) {
     .filter((n) => n.parentId === parentId)
     .forEach((child) => {
       // Questions the user added by hand stay, whatever is chosen on this node.
-      if (child.spec.kind === 'custom') return
+      if (child.spec.kind === 'custom' || child.spec.kind === 'lookup') return
       const key = child.id.slice(parentId.length + 1)
       const want = wanted.get(key)
       if (want && sameSpec(want.spec, child.spec)) return
@@ -155,6 +158,73 @@ export function buildCustomNode(plan, parentId, prompt, askId) {
     thinkMs: 1400,
     ...(parent.offset && { offset: parent.offset }),
   }
+}
+
+/**
+ * A phrase the user selected becomes a temporary node under the node it was
+ * selected on: the agent explains it, and the user keeps or discards it.
+ */
+export function buildLookupNode(plan, parentId, phrase, lookupId, query = '') {
+  const parent = plan.nodes.find((n) => n.id === parentId)
+  const text = phrase.replace(/\s+/g, ' ').trim().slice(0, 80)
+  const earlier = plan.nodes.filter((n) => n.parentId === parentId && n.spec.kind === 'lookup').length
+  const where = { question: parent.spec.kind === 'root' ? null : specContent(parent.spec).question }
+  const ask = query.trim().slice(0, 140)
+  // A question the network can answer with options becomes a temporary question node.
+  const answer = ask ? flowOfPlan(plan).answerPrompt(`${ask} ${text}`, plan, parent) : null
+  if (answer?.topic) {
+    return {
+      id: `${parentId}/${lookupId}`,
+      parentId,
+      order: 2000 + earlier,
+      spec: { kind: 'custom', prompt: ask, phrase: text, temp: true, answer, ...stamp(plan.flow) },
+      selected: [],
+      status: 'thinking',
+      thinkMs: 1400,
+      ...(parent.offset && { offset: parent.offset }),
+    }
+  }
+  return {
+    id: `${parentId}/${lookupId}`,
+    parentId,
+    // After the agent's own questions and the user's typed ones.
+    order: 2000 + earlier,
+    spec: { kind: 'lookup', phrase: text, temp: true, answer: flowOfPlan(plan).lookup(text, where, ask), ...stamp(plan.flow) },
+    selected: [],
+    status: 'thinking',
+    thinkMs: 900,
+    ...(parent.offset && { offset: parent.offset }),
+  }
+}
+
+/**
+ * Draft-first: take the agent's suggestion on every question nobody has answered
+ * yet, all the way down the tree (a choice grows follow-ups, which get answered
+ * too), so there's a complete set of picks to draft from. Nodes the user already
+ * answered, and nodes they typed, are left alone.
+ */
+export function applySuggestions(fullPlan) {
+  const ready = (plan) => ({ ...plan, nodes: plan.nodes.map((n) => ({ ...n, status: 'ready' })) })
+  let plan = ready(fullPlan)
+  for (let round = 0; round < 6; round += 1) {
+    let changed = false
+    plan.nodes
+      .map((n) => n.id)
+      .forEach((id) => {
+        const node = plan.nodes.find((n) => n.id === id)
+        if (!node || !node.parentId || node.selected.length || node.spec.kind === 'custom' || node.spec.kind === 'lookup') return
+        const { suggested } = flowOfPlan(plan).describeNode(plan, node)
+        const picks = specContent(node.spec).multi ? suggested : suggested.slice(0, 1)
+        picks.forEach((optionId) => {
+          plan = toggleOption(plan, id, optionId)
+          changed = true
+        })
+      })
+    // Follow-ups grown by those picks are answered next round.
+    plan = ready(plan)
+    if (!changed) break
+  }
+  return plan
 }
 
 /** Remove a node the user added, and everything that grew from it. */
@@ -222,6 +292,7 @@ const GAP_Y = 72
 const estimateHeight = (node) => {
   if (node.spec.kind === 'root') return node.status === 'thinking' ? 130 : 170
   if (node.status === 'thinking') return 190
+  if (node.spec.kind === 'lookup') return 250
   const n = specContent(node.spec).options.length
   const long = node.spec.kind === 'custom' || flowOfSpec(node.spec).longLabels.has(node.spec.kind)
   return 250 + (long ? n * 40 : Math.ceil(n / 3) * 40)

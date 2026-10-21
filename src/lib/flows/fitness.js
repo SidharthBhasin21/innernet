@@ -3,12 +3,14 @@
 // any flow that has this shape. Its nodes carry `spec.flow: 'fitness'`.
 
 import { diets, goals, kits, lengths, meals, sessionOptions, wheres } from '../../data/fitnessPlan'
+import { glossary } from '../../data/fitnessGlossary'
 import { byId } from './shared'
+import { lookupPhrase } from './lookup'
 import { focusFor, parseWeeks } from '../fitness/context'
 import { answerPrompt } from '../fitness/custom'
 import { thinkAboutFitness } from '../fitness/thinking'
 import { describeNode } from '../fitness/reasoning'
-import { draftPlan } from '../fitness/plan'
+import { buildPlan, draftPlan } from '../fitness/plan'
 
 const chip = (prefix) => (o) => ({ ...o, chip: prefix ? `${prefix}: ${o.label}` : o.label })
 
@@ -102,7 +104,9 @@ export default {
   describeNode,
   think: thinkAboutFitness,
   draft: draftPlan,
+  build: buildPlan,
   answerPrompt,
+  lookup: (phrase, where, query) => lookupPhrase(phrase, glossary, where, query),
   copy: {
     draft: 'Draft my whole plan',
     draftAgain: 'Draft again',

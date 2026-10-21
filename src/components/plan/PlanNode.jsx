@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { AlertTriangle, ArrowUp, BedDouble, CalendarDays, Check, ChevronsDownUp, Crosshair, Dumbbell, Footprints, House, Landmark, MapPin, MessageSquarePlus, Plane, Plus, Salad, Sparkles, Target, Timer, UtensilsCrossed, Wallet, Wrench, X } from 'lucide-react'
+import { AlertTriangle, BedDouble, CalendarDays, Check, ChevronsDownUp, Crosshair, Dumbbell, Footprints, House, Landmark, MapPin, MessageSquarePlus, Plane, Salad, Sparkles, Target, Timer, UtensilsCrossed, Wallet, Wrench, X } from 'lucide-react'
 import AgentActivity from '../agent/AgentActivity'
+import AddBranch from './AddBranch'
+import LookupNode from './LookupNode'
+import Thinking from './Thinking'
 import AgentMascot from '../agent/AgentMascot'
 import ChatMenu from '../chat/ChatMenu'
 import Avatar from '../ui/Avatar'
@@ -122,107 +125,24 @@ function Advice({ items }) {
   )
 }
 
-const STARTERS = ['What about shopping?', 'Any good nightlife?', 'Rainy-day plans?']
-
-// "Add a branch": type any question and a new node grows from this one. A few
-// starters show what kinds of things the agent can answer.
-function AddBranch({ onAdd }) {
-  const [open, setOpen] = useState(false)
-  const [text, setText] = useState('')
-  const inputRef = useRef(null)
-
-  // preventScroll: focusing must not scroll the app shell to reveal the field.
-  useEffect(() => {
-    if (open) inputRef.current?.focus({ preventScroll: true })
-  }, [open])
-
-  const submit = (value) => {
-    const prompt = value.trim()
-    if (!prompt) return
-    onAdd(prompt)
-    setText('')
-    setOpen(false)
-  }
-
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)} className="nodrag mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-gray-300 px-3 py-1 text-body-s font-medium text-gray-500 transition-colors hover:border-indigo hover:text-indigo focus-ring">
-        <Plus className="size-3.5" aria-hidden="true" />
-        Add a branch
-      </button>
-    )
-  }
-  return (
-    <div className="nodrag nopan mt-3 cursor-auto">
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          submit(text)
-        }}
-        className="flex items-center gap-1 rounded-full border border-gray-200 bg-white py-1 pr-1 pl-3 transition-[border-color,box-shadow] focus-within:border-indigo focus-within:shadow-focus"
-      >
-        <input
-          ref={inputRef}
-          value={text}
-          maxLength={140}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => event.key === 'Escape' && setOpen(false)}
-          aria-label="Ask your agent to add a branch from here"
-          placeholder="Ask anything from here…"
-          // 16px on phones stops iOS Safari from zooming the page on focus.
-          className="min-w-0 flex-1 bg-transparent text-body-s text-gray-900 placeholder:text-gray-400 focus:outline-none max-md:text-body-l"
-        />
-        <button type="submit" disabled={!text.trim()} aria-label="Add branch" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-indigo text-white transition-colors hover:bg-indigo-hover focus-ring disabled:bg-gray-200 disabled:text-gray-400">
-          <ArrowUp className="size-3.5" />
-        </button>
-      </form>
-      <ul className="mt-1.5 flex flex-wrap gap-1">
-        {STARTERS.map((starter) => (
-          <li key={starter}>
-            <button type="button" onClick={() => submit(starter)} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-caption text-gray-600 transition-colors hover:bg-indigo-soft hover:text-indigo focus-ring">
-              {starter}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-// The node while the agent is still working it out: the question isn't there yet.
-function Thinking({ icon: Icon, message }) {
-  return (
-    <div className="p-4">
-      <div className="plan-drag-handle flex cursor-grab items-center gap-2.5 active:cursor-grabbing">
-        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400" aria-hidden="true">
-          <Icon className="size-4" />
-        </span>
-        <AgentActivity activity={{ message }} />
-      </div>
-      <div aria-hidden="true" className="mt-4 flex flex-wrap gap-1.5 animate-pulse-soft">
-        {[20, 14, 24, 16].map((w, i) => (
-          <span key={i} style={{ width: `${w * 4}px` }} className="h-8 rounded-full bg-gray-100" />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // One node of the trip tree: the trip itself, or a question the agent has
 // worked out. It thinks first (a placeholder), then shows why it's asking, what
 // it would suggest, and reacts to what you choose, which can grow new nodes.
 export default function PlanNode({ id }) {
-  const { plans, toggleOption, pickSuggested, deletePlan, focusPlan, setPlanCollapsed, addQuestion, removeNode } = useCanvas()
+  const { plans, toggleOption, pickSuggested, deletePlan, focusPlan, setPlanCollapsed, addQuestion, removeNode, keepNode, draftFirst } = useCanvas()
   const [focusId, setFocusId] = useState(null)
   const plan = plans.find((p) => id.startsWith(`${p.id}/`))
   const node = plan?.nodes.find((n) => n.id === id)
   if (!node) return null
+  if (node.spec.kind === 'lookup') return <LookupNode plan={plan} node={node} />
 
   const content = specContent(node.spec)
   const Icon = icons[content.icon] ?? Sparkles
   const isRoot = node.spec.kind === 'root'
   // A question the user typed (rather than one the agent asked).
   const isCustom = node.spec.kind === 'custom'
+  // A question asked about selected text stays temporary until the user keeps it.
+  const isTemp = isCustom && node.spec.temp
   const thinking = node.status === 'thinking'
   const picked = node.selected.length
   const { why, suggested, advice } = thinking || isRoot ? { why: null, suggested: [], advice: [] } : flowOfPlan(plan).describeNode(plan, node)
@@ -232,17 +152,19 @@ export default function PlanNode({ id }) {
 
   return (
     <article
-      aria-label={isRoot ? content.title : isCustom ? `${content.title} (your question)${thinking ? ' (thinking)' : ''}` : thinking ? `${content.title} (thinking)` : `${content.title}: ${content.question}`}
+      aria-label={isRoot ? content.title : isCustom ? `${content.title} (${isTemp ? 'temporary' : 'your question'})${thinking ? ' (thinking)' : ''}` : thinking ? `${content.title} (thinking)` : `${content.title}: ${content.question}`}
       aria-busy={thinking}
+      data-lookup-plan={plan.id}
+      data-lookup-node={node.id}
       onPointerDown={() => focusPlan(plan.id)}
-      className={`animate-pop-in rounded-xl border bg-white shadow-medium ${isRoot ? 'w-70 border-indigo-border' : isCustom ? 'w-75 border-purple/40' : 'w-75 border-gray-200'}`}
+      className={`animate-pop-in rounded-xl border bg-white shadow-medium select-text ${isRoot ? 'w-70 border-indigo-border' : isTemp ? 'w-75 border-dashed border-purple/60' : isCustom ? 'w-75 border-purple/40' : 'w-75 border-gray-200'}`}
     >
       <Handle type="target" position={Position.Top} style={anchor} isConnectable={false} />
       <Handle type="source" position={Position.Bottom} style={anchor} isConnectable={false} />
 
       {isRoot ? (
         <div className="p-4">
-          <div className="plan-drag-handle flex cursor-grab items-center gap-3 active:cursor-grabbing">
+          <div className="plan-drag-handle select-none flex cursor-grab items-center gap-3 active:cursor-grabbing">
             <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-soft">
               <AgentMascot tone="indigo" />
             </span>
@@ -274,14 +196,24 @@ export default function PlanNode({ id }) {
                 </p>
               )
             )}
-            {!thinking && <AddBranch onAdd={(prompt) => addQuestion(plan.id, node.id, prompt)} />}
+            {!thinking && (
+              <div className="flex flex-wrap items-center gap-x-2">
+                {!plan.itinerary && plan.status !== 'drafting' && (
+                  <button type="button" onClick={() => draftFirst(plan.id)} className="btn btn-primary mt-3 inline-flex items-center gap-1.5 px-3 py-1 text-body-s">
+                    <Sparkles className="size-3.5" aria-hidden="true" />
+                    Draft it for me
+                  </button>
+                )}
+                <AddBranch onAdd={(prompt) => addQuestion(plan.id, node.id, prompt)} />
+              </div>
+            )}
           </div>
         </div>
       ) : thinking ? (
         <Thinking icon={Icon} message={thinkMessage(node.spec)} />
       ) : (
         <div className="p-4 animate-pop-in">
-          <div className="plan-drag-handle flex cursor-grab items-center gap-2.5 active:cursor-grabbing">
+          <div className="plan-drag-handle select-none flex cursor-grab items-center gap-2.5 active:cursor-grabbing">
             <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-indigo-soft text-indigo" aria-hidden="true">
               <Icon className="size-4" />
             </span>
@@ -289,7 +221,8 @@ export default function PlanNode({ id }) {
               <h3 className="text-body-m font-semibold text-gray-900">{content.question}</h3>
               {content.context && <p className="text-caption text-gray-500">{content.context}</p>}
             </div>
-            {isCustom && (
+            {isTemp && <span className="shrink-0 self-start rounded-full bg-(--tone-amber-soft) px-2 py-0.5 text-caption font-medium text-warning">Temporary</span>}
+            {isCustom && !isTemp && (
               <button
                 type="button"
                 onClick={() => removeNode(plan.id, node.id)}
@@ -337,7 +270,25 @@ export default function PlanNode({ id }) {
           )}
           <Info option={shown} />
           <Advice items={advice} />
-          <AddBranch onAdd={(prompt) => addQuestion(plan.id, node.id, prompt)} />
+          {isTemp && (
+            <div className="nodrag mt-3 flex cursor-auto items-center gap-2">
+              <button type="button" onClick={() => keepNode(plan.id, node.id)} className="btn btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-body-s">
+                <Check className="size-3.5" aria-hidden="true" />
+                Keep
+              </button>
+              <button type="button" onClick={() => removeNode(plan.id, node.id)} className="btn btn-secondary inline-flex items-center gap-1.5 px-3 py-1 text-body-s">
+                <X className="size-3.5" aria-hidden="true" />
+                Discard
+              </button>
+            </div>
+          )}
+          <AddBranch
+            onAdd={(prompt) => {
+              // Asking more about it means you want it, so it's kept.
+              if (isTemp) keepNode(plan.id, node.id)
+              addQuestion(plan.id, node.id, prompt)
+            }}
+          />
         </div>
       )}
     </article>

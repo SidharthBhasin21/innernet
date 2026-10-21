@@ -1,5 +1,6 @@
 import Avatar from '../../ui/Avatar'
 import { getUser } from '../../../data/mockUsers'
+import SwapControl, { SwappedTag } from './Swap'
 
 // What a friend said about something, small and under it.
 function Said({ by, quote }) {
@@ -13,7 +14,7 @@ function Said({ by, quote }) {
   )
 }
 
-function Week({ week }) {
+function Week({ week, onSwap }) {
   return (
     <section aria-label={`Week ${week.n}`} className="border-t border-gray-200 pt-5">
       <h3 className="text-heading-3 text-gray-900">
@@ -32,7 +33,9 @@ function Week({ week }) {
                 <div key={item.text} className="grid grid-cols-[1fr_auto] gap-3">
                   <dt>
                     <span className="text-body-m text-gray-900">{item.text}</span>
+                    <SwappedTag item={item} />
                     <Said by={item.by} quote={item.quote} />
+                    <SwapControl item={item} onSwap={onSwap} />
                   </dt>
                   <dd className="pt-0.5 text-right text-body-s text-gray-500">{item.detail}</dd>
                 </div>
@@ -45,7 +48,7 @@ function Week({ week }) {
   )
 }
 
-function Nutrition({ nutrition }) {
+function Nutrition({ nutrition, onSwap }) {
   return (
     <section aria-label="Eating" className="border-t border-gray-200 pt-5">
       <h3 className="text-heading-3 text-gray-900">Eating</h3>
@@ -56,9 +59,11 @@ function Nutrition({ nutrition }) {
             <dt className="pt-0.5 text-body-s text-gray-400">{meal.slot}</dt>
             <dd>
               <span className="text-body-l text-gray-900">{meal.text}</span>
-              {meal.chosen && <span className="ml-2 rounded-full bg-indigo-soft px-2 py-0.5 align-middle text-caption font-medium text-indigo">Your pick</span>}
+              {meal.chosen && <span className="ml-2 rounded-full bg-indigo-soft px-2 py-0.5 align-middle text-caption font-medium text-indigo">Picked</span>}
+              <SwappedTag item={meal} />
               <span className="block text-body-s text-gray-500">{meal.detail}</span>
               <Said by={meal.by} quote={meal.quote} />
+              <SwapControl item={meal} onSwap={onSwap} />
             </dd>
           </div>
         ))}
@@ -87,13 +92,13 @@ function List({ label, items }) {
 
 // The fitness plan's part of the document: each week's sessions, what to eat,
 // the kit you need and any extras you asked about.
-export default function FitnessDocument({ itinerary: plan }) {
+export default function FitnessDocument({ itinerary: plan, onSwap }) {
   return (
     <>
       {plan.weeks.map((week) => (
-        <Week key={week.n} week={week} />
+        <Week key={week.n} week={week} onSwap={onSwap} />
       ))}
-      <Nutrition nutrition={plan.nutrition} />
+      <Nutrition nutrition={plan.nutrition} onSwap={onSwap} />
       <List label="What you’ll need" items={plan.gear} />
       <List label="Extras you asked about" items={plan.extras} />
     </>
